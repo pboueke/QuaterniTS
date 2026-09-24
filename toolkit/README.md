@@ -139,18 +139,29 @@ whole 001/D18 Node gate.
 `make integration` runs the same script with `--integration`, so the build,
 pack and disposable-directory install happen once instead of being duplicated,
 and then runs `toolkit/consumers/integration-consumer.mjs` against the installed
-tarball. That fixture is the real installed-package end-to-end check: it starts
-from the validated four-active custom position of
-`docs/rules/multiplayer-adjudication.md` §4 Fixture 4a, plays one real committed
-move whose §4 snapshot batch mates two controllers, freezes the next active
-controller on time (001/D45) to reach the winner, and then asserts the board,
-retained armies, controllers, statuses, history order/awards/selection, the
-winner, post-terminal atomic rejection, the shipped schema subpath, a versioned
-V1 snapshot round trip into a fresh installed `Quaternity` instance, an atomic
-invalid load, both `undo()` steps and
-`reset()`. It is a **compact complete-game lifecycle fixture**: it neither
-proves that the official opening position can reach that custom position nor
-decides the `[open]` checked-non-actor edge. The target runs inside
+tarball. That fixture is the real installed-package end-to-end check:
+
+1. It starts from the validated four-active custom position of
+   `docs/rules/multiplayer-adjudication.md` §4 Fixture 4a, plays one real
+   committed move whose §4 snapshot batch mates two controllers, freezes the
+   next active controller on time (001/D45) to reach the winner, and then asserts
+   the board, retained armies, controllers, statuses, history
+   order/awards/selection, the winner, post-terminal atomic rejection, the
+   shipped schema subpath, a versioned V1 snapshot round trip into a fresh
+   installed `Quaternity` instance, an atomic invalid load, both `undo()` steps
+   and `reset()`. It neither proves that the official opening position can reach
+   that custom position nor decides the `[open]` checked-non-actor edge.
+2. It then plays the **opening-to-terminal administrative match** of
+   `docs/fixtures/opening-to-terminal-administrative-match.md` (the executable
+   twin of `src/quaternity.test.ts`): the installed package's own reviewed
+   opening position, one real committed move per army, a pending draw offer
+   expired inside White's next move, and the three `001/D45` freezes into the
+   lone-active winner, with the untouched 64-piece board, the offer
+   expiry/undo coupling, the V1 snapshot replay and `reset()` asserted. Its
+   winner comes from a freeze, not a mate, so it is **not a proof of
+   opening-to-mate**.
+
+Both are compact complete-game lifecycle fixtures. The target runs inside
 `make verify`.
 
 ### Snapshot contract gate

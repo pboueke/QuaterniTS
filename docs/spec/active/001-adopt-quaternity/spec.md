@@ -10,6 +10,10 @@ shipped.
 The [numbered decisions](decisions.md) (`001/D1`–`001/D45`) are the current decision
 index. Source-linked examples and detailed rule fixtures live in
 [`docs/fixtures/opening-position.md`](../../../fixtures/opening-position.md),
+[`docs/fixtures/opening-to-terminal-administrative-match.md`](../../../fixtures/opening-to-terminal-administrative-match.md)
+(the executed match from that opening to the owner-approved `001/D45`
+administrative finish — the full-match fixture, **not** a proof of
+opening-to-mate),
 [`docs/rules/pawn-vectors.md`](../../../rules/pawn-vectors.md),
 [`docs/rules/multiplayer-adjudication.md`](../../../rules/multiplayer-adjudication.md),
 [`docs/rules/administrative-actions.md`](../../../rules/administrative-actions.md)

@@ -44,6 +44,7 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import {
   Quaternity,
@@ -51,9 +52,11 @@ import {
   createPosition,
   type Attacker,
   type CommittableMove,
+  type HistoryEvent,
   type PlacedEntry,
   type PositionInput,
   type PositionMoveInput,
+  type SnapshotAction,
 } from "./index.ts";
 import { ARMY_COLORS, type ArmyColor, type Square } from "./board.ts";
 import {
@@ -65,6 +68,7 @@ import {
 } from "./position.ts";
 import { legalMoves } from "./legalMoves.ts";
 import { committableMoves } from "./committedMove.ts";
+import type { TurnSelection } from "./turn.ts";
 import { PROMOTION_CHOICES, type PromotionPieceType } from "./pawn.ts";
 
 const ALL_ACTIVE: Readonly<Record<ArmyColor, PlayerStatus>> = {
@@ -1571,4 +1575,334 @@ test("a turn-advancing freeze observes the 001/D39–001/D41 checked-successor g
   assert.throws(() => game.resign("white"), UnresolvedAdjudicationError);
   assertUnchanged(game, state, 0, outcome);
   assert.equal(game.status().white, "active");
+});
+
+/*
+ * Opening-to-terminal administrative match (spec completion criteria;
+ * 001/D11 fixture `docs/fixtures/opening-to-terminal-administrative-match.md`).
+ *
+ * This is the small full match the completion criteria ask for: it starts from
+ * the reviewed official opening fixture (001/D9), plays one real public
+ * committed move per army, and then ends through the three interchangeable
+ * 001/D45 freezes in clockwise order. The winner therefore comes from an
+ * administrative freeze, not from a mate: the match is an
+ * **opening-to-terminal administrative match** — labelled that way in the
+ * fixture document — and it is **not** evidence of an opening-to-mate line, of
+ * assimilation from the opening, or of a complete engine. A match that ends
+ * administratively is a valid full match, but it proves only what it runs.
+ *
+ * Every action goes through the real engine (`move`, `proposeDraw`,
+ * `recordTimeLoss`, `resign`, `recordWalkover`), so a move this fixture records
+ * that the engine rejects as illegal, non-committable or guard-vetoed fails the
+ * test instead of being replaced by an invented outcome.
+ *
+ * The document-sync test reads the fixture's own two machine-readable copies —
+ * the §5 fenced JSON action log and the §3 "Expected after" column — and
+ * requires both to equal what the engine recorded, so a wrong, missing or extra
+ * documented action fails the gate instead of being silently tolerated.
+ */
+
+/** The reviewed expected-outcome fixture this test executes. */
+const OPENING_MATCH_FIXTURE = new URL(
+  "../docs/fixtures/opening-to-terminal-administrative-match.md",
+  import.meta.url,
+);
+
+/** How the fixture document names one recorded action of this match. */
+function documentedAction(action: SnapshotAction): string {
+  if (action.kind === "move") {
+    return `${action.from}–${action.to}`;
+  }
+  if (action.kind === "freeze") {
+    return `${action.action} ${action.player}`;
+  }
+  assert.equal(action.kind, "draw-proposal");
+  return "proposeDraw()";
+}
+
+/**
+ * The fixture's §5 fenced JSON action log, parsed. It is the document's own copy
+ * of the coordinate actions, so it must equal the engine's `snapshot().actions`
+ * action for action.
+ */
+function fixtureActionLog(markdown: string): unknown {
+  const fence = "```json\n";
+  const open = markdown.indexOf(fence);
+  assert.notEqual(open, -1, "the fixture must carry a fenced json action log");
+  const start = open + fence.length;
+  const close = markdown.indexOf("```", start);
+  assert.notEqual(close, -1, "the fixture's json fence must be closed");
+  return JSON.parse(markdown.slice(start, close));
+}
+
+/**
+ * The fixture's §3 "Expected after" cells as the engine's turn selections, in
+ * row order. The cell that names no selection (the draw proposal, which keeps
+ * the turn) yields `null`.
+ */
+function documentedSelections(markdown: string): (TurnSelection | null)[] {
+  const lines = markdown.split("\n");
+  const header = lines.findIndex(
+    (line) => line.startsWith("|") && line.includes("Expected after"),
+  );
+  assert.notEqual(header, -1, "the fixture must carry the §3 action table");
+  const column = (lines[header] ?? "")
+    .split("|")
+    .findIndex((cell) => cell.trim() === "Expected after");
+  assert.notEqual(
+    column,
+    -1,
+    "the §3 action table must name an Expected after column",
+  );
+  const selections: (TurnSelection | null)[] = [];
+  for (const line of lines.slice(header + 1)) {
+    if (!line.startsWith("|")) {
+      break;
+    }
+    const cell = (line.split("|")[column] ?? "").trim();
+    if (/^-+$/u.test(cell)) {
+      continue; // the markdown delimiter row under the header
+    }
+    const named = /^(next|winner): ([A-Za-z]+)/u.exec(cell);
+    const word = named?.[2]?.toLowerCase();
+    const player = ARMY_COLORS.find((colour) => colour === word);
+    selections.push(
+      named === null || player === undefined
+        ? null
+        : named[1] === "next"
+          ? { kind: "next", player }
+          : { kind: "winner", winner: player },
+    );
+  }
+  return selections;
+}
+
+/** One history event's recorded turn selection, or `null` where it records none. */
+function recordedSelection(event: HistoryEvent): TurnSelection | null {
+  return "selection" in event ? event.selection : null;
+}
+
+/**
+ * Commit one documented match move: the public committable set must offer it,
+ * it must capture nothing and it must advance the turn to `next`.
+ */
+function commitDocumentedMove(
+  game: Quaternity,
+  from: Square,
+  to: Square,
+  next: ArmyColor,
+): void {
+  assert.ok(
+    hasMove(game.moves(), from, to),
+    `${from}–${to} must be publicly committable`,
+  );
+  const event = game.move({ from, to });
+  assert.deepEqual(event.awards, []);
+  assert.deepEqual(event.selection, { kind: "next", player: next });
+}
+
+/**
+ * Play the documented match: the reviewed opening position, four committed
+ * moves, the offer-expiring move and the three freezes that end it.
+ */
+function playOpeningMatch(game: Quaternity): void {
+  // One real committed move per army, clockwise from White.
+  commitDocumentedMove(game, "b4", "c2", "red");
+  commitDocumentedMove(game, "d11", "b10", "black");
+  commitDocumentedMove(game, "j9", "l10", "green");
+  commitDocumentedMove(game, "i2", "g3", "white");
+  // A draw offer by the on-turn controller, expired inside White's next move:
+  // one event, so one undo() restores the offer (001/D45 §1 O1).
+  assert.deepEqual(game.proposeDraw(), {
+    kind: "draw-proposal",
+    proposer: "white",
+  });
+  assert.deepEqual(game.pendingDraw(), {
+    proposer: "white",
+    acceptedBy: [],
+  });
+  commitDocumentedMove(game, "a1", "a2", "red");
+  assert.equal(game.pendingDraw(), null);
+  // The three interchangeable freezes, in clockwise order, leave White the lone
+  // active controller. The board keeps every piece and no batch is applied.
+  assert.deepEqual(game.recordTimeLoss("red").selection, {
+    kind: "next",
+    player: "black",
+  });
+  assert.deepEqual(game.resign("black").selection, {
+    kind: "next",
+    player: "green",
+  });
+  assert.deepEqual(game.recordWalkover("green").selection, {
+    kind: "winner",
+    winner: "white",
+  });
+}
+
+test("the opening-to-terminal administrative match fixture records every action it plays", () => {
+  const document = readFileSync(OPENING_MATCH_FIXTURE, "utf8");
+  const game = new Quaternity();
+  playOpeningMatch(game);
+
+  // §5's fenced JSON log is the document's copy of the whole coordinate log: it
+  // must equal the engine's, so a wrong, missing or extra documented action
+  // fails here instead of being played back as if the document agreed.
+  assert.deepEqual(
+    fixtureActionLog(document),
+    JSON.parse(JSON.stringify(game.snapshot().actions)),
+  );
+
+  // §3's "Expected after" column is the document's copy of each recorded turn
+  // selection; the events the engine recorded must agree with it row for row.
+  const recorded = game.history().map(recordedSelection);
+  assert.deepEqual(documentedSelections(document), recorded);
+
+  // Whitespace is normalised because the formatter may wrap a documented
+  // phrase across lines; the fixture's words are what this test pins.
+  const documented = document.replace(/\s+/gu, " ");
+  for (const action of game.snapshot().actions) {
+    const label = documentedAction(action);
+    assert.ok(
+      documented.includes(label),
+      `the fixture must document the action ${label}`,
+    );
+  }
+  assert.ok(documented.includes("opening-to-terminal administrative match"));
+  assert.ok(documented.includes("not a proof of opening-to-mate"));
+  assert.ok(documented.includes("winner: White"));
+  assert.ok(documented.includes("001/D45"));
+});
+
+test("the opening-to-terminal administrative match ends with an administrative winner and is terminal", () => {
+  const game = new Quaternity();
+  assert.equal(game.position().board.size, 64);
+  assert.equal(game.turn(), "white");
+  playOpeningMatch(game);
+
+  assert.deepEqual(game.outcome(), { kind: "winner", winner: "white" });
+  assert.deepEqual(game.status(), {
+    white: "active",
+    red: "frozen",
+    black: "frozen",
+    green: "frozen",
+  });
+  assert.deepEqual(
+    game.history().map((event) => event.kind),
+    [
+      "move",
+      "move",
+      "move",
+      "move",
+      "draw-proposal",
+      "move",
+      "freeze",
+      "freeze",
+      "freeze",
+    ],
+  );
+  // The administrative path changes no square: 64 pieces, and all four kings
+  // (the White king having made its documented king move) stay on the board.
+  assert.equal(game.position().board.size, 64);
+  assert.deepEqual(
+    [...game.position().board.entries()]
+      .filter(([, piece]) => piece.type === "king")
+      .map(([square]) => square)
+      .sort(),
+    ["a12", "a2", "l1", "l12"],
+  );
+
+  // Terminal atomicity: every board and administrative action is rejected and
+  // changes nothing (001/D35, 001/D45).
+  const state = stateKey(game.position());
+  const outcome = game.outcome();
+  for (const action of [
+    () => game.move({ from: "a1", to: "a2" }),
+    () => game.pass(),
+    () => game.moves(),
+    () => game.proposeDraw(),
+    () => game.respondToDraw("red", true),
+    () => game.resign("white"),
+    () => game.recordTimeLoss("black"),
+    () => game.recordWalkover("green"),
+  ]) {
+    assert.throws(action, isOrdinaryError);
+  }
+  assertUnchanged(game, state, 9, outcome);
+});
+
+test("the match keeps one-event undo, the V1 snapshot reload and reset", () => {
+  const game = new Quaternity();
+  playOpeningMatch(game);
+
+  // The deterministic coordinate log of the whole match (001/D10).
+  const terminal = JSON.parse(JSON.stringify(game.snapshot()));
+  assert.deepEqual(terminal.actions, [
+    { kind: "move", from: "b4", to: "c2", promotion: null },
+    { kind: "move", from: "d11", to: "b10", promotion: null },
+    { kind: "move", from: "j9", to: "l10", promotion: null },
+    { kind: "move", from: "i2", to: "g3", promotion: null },
+    { kind: "draw-proposal" },
+    { kind: "move", from: "a1", to: "a2", promotion: null },
+    { kind: "freeze", action: "time-loss", player: "red" },
+    { kind: "freeze", action: "resign", player: "black" },
+    { kind: "freeze", action: "walkover", player: "green" },
+  ]);
+
+  // A fresh instance replays the whole match through the public API and adopts
+  // it only because the replayed state agrees with the serialized one.
+  const replayed = new Quaternity();
+  replayed.loadSnapshot(terminal);
+  assert.deepEqual(replayed.snapshot(), terminal);
+  assert.deepEqual(replayed.history(), game.history());
+  assert.deepEqual(replayed.outcome(), { kind: "winner", winner: "white" });
+  assert.equal(replayed.turn(), "white");
+
+  // One undo() reverses exactly the last event: the freeze that ended the game.
+  replayed.undo();
+  assert.deepEqual(replayed.outcome(), { kind: "in-progress" });
+  assert.equal(replayed.turn(), "green");
+  assert.equal(replayed.status().green, "active");
+  assert.equal(replayed.history().length, 8);
+
+  // Two more undos remove the other two freezes; the next one reverses the
+  // offer-expiring move and restores the pending offer with its recorded votes,
+  // because the expiry lives inside that single event (001/D45).
+  replayed.undo();
+  replayed.undo();
+  assert.deepEqual(replayed.status(), {
+    white: "active",
+    red: "active",
+    black: "active",
+    green: "active",
+  });
+  replayed.undo();
+  assert.deepEqual(replayed.pendingDraw(), {
+    proposer: "white",
+    acceptedBy: [],
+  });
+  assert.equal(replayed.turn(), "white");
+  assert.equal(replayed.position().board.get("a1")?.type, "king");
+  assert.equal(replayed.history().length, 5);
+
+  // One more undo clears the offer again; the remaining four reverse the moves.
+  replayed.undo();
+  assert.equal(replayed.pendingDraw(), null);
+  assert.equal(replayed.history().length, 4);
+  for (let undone = 0; undone < 4; undone += 1) {
+    replayed.undo();
+  }
+  assert.equal(replayed.history().length, 0);
+  assert.equal(stateKey(replayed.position()), stateKey(defaultPosition()));
+  assert.deepEqual(replayed.outcome(), { kind: "in-progress" });
+  assert.throws(() => replayed.undo(), isOrdinaryError);
+
+  // reset() leaves the terminal match behind and restores the opening fixture.
+  game.reset();
+  assert.equal(stateKey(game.position()), stateKey(defaultPosition()));
+  assert.equal(game.position().board.size, 64);
+  assert.equal(game.turn(), "white");
+  assert.equal(game.pendingDraw(), null);
+  assert.deepEqual(game.history(), []);
+  assert.deepEqual(game.outcome(), { kind: "in-progress" });
+  assert.throws(() => game.undo(), isOrdinaryError);
 });

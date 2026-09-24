@@ -112,10 +112,13 @@ complete engine:
   `make verify`: `make consumer-test` really builds the package, packs it,
   installs the tarball in a disposable directory and runs Node ESM, Node
   CommonJS and TypeScript declaration consumers against it, including a snapshot
-  round trip; `make integration` installs the same tarball and plays a compact
-  complete-game lifecycle fixture (validated custom position, snapshot batch
-  mate, freeze, winner, snapshot round trip, atomic invalid load, undo and
-  reset) against it; `make contract-check` really compiles the shipped schema
+  round trip; `make integration` installs the same tarball and plays two compact
+  complete-game lifecycle fixtures against it — a validated custom position
+  (snapshot batch mate, freeze, winner) and an opening-to-terminal
+  **administrative** match from the reviewed opening position (one real committed
+  move per army, then a draw-offer expiry and the three freezes) — covering the
+  snapshot round trip, an atomic invalid load, undo and reset; `make
+contract-check` really compiles the shipped schema
   and checks runtime snapshots plus committed valid/invalid/drift fixtures; and
   `make browser-consumer` loads the same installed tarball in a real headless
   Chromium through an import map in an offline container. Its first run pulls a
@@ -153,6 +156,16 @@ source-linked expected-outcome tables and tests written before the code (001/D11
 - `docs/rules/administrative-actions.md` — the owner-approved draw-offer expiry
   and freeze-sequencing table for `proposeDraw`/`respondToDraw` and the three
   freeze actions (001/D45, §6/§7 of the adjudication table).
+- `docs/fixtures/opening-to-terminal-administrative-match.md` — the executed
+  expected-outcome fixture of one match from the reviewed opening position to a
+  terminal winner (001/D11). It is plainly an **opening-to-terminal
+  administrative match**: real committed moves open, the three 001/D45 freezes
+  end it, and it is **not a proof of opening-to-mate**.
+- `docs/usage.md` — concise runnable examples of the public API, executed as a
+  smoke test by `make test` so they cannot drift from the real API.
+- `docs/compatibility.md` — the chess.js-style compatibility matrix: which calls
+  are equivalent, renamed, partial or deliberately unsupported, with no SAN, FEN
+  or PGN claim (001/D4).
 - `docs/spec/README.md` — the spec workflow.
 - `docs/spec/active/001-adopt-quaternity/spec.md` — the concise library contract;
   its `decisions.md` records citable `001/D<n>` decisions.

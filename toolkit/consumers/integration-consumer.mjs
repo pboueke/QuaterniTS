@@ -4,22 +4,34 @@
  *
  * Run from a disposable directory that installed the packed tarball, never from
  * the repository sources, by `toolkit/scripts/consumer-test.sh --integration`.
- * Where the consumer smokes assert one action each, this fixture drives one
- * **compact complete-game lifecycle** through the installed public surface:
- * a validated four-active custom position (`docs/rules/multiplayer-adjudication.md`
- * §4 Fixture 4a) is played into a real snapshot-batch mate that removes two
- * controllers, the next active controller then loses on time, and the resulting
- * winner is checked through the board, retained armies, controllers, statuses,
- * history order, awards, selection, post-terminal rejection, the shipped schema
- * subpath, a versioned V1 snapshot round trip, an atomic invalid load, both
- * `undo()` steps and `reset()`.
+ * Where the consumer smokes assert one action each, this fixture drives two
+ * **compact complete-game lifecycles** through the installed public surface.
  *
- * This is deliberately a **lifecycle** fixture, not proof that the official
- * opening position can reach this custom position, and it decides no outcome for
- * the `[open]` checked-non-actor edge (001/D39–001/D41, 001/D44): every action
- * here is an ordinary legal move or the 001/D45 administrative freeze. The
- * packaging-level "no sources shipped" checks stay in `consumer-test.sh`, which
- * tars the same artifact this consumer runs against.
+ * 1. A validated four-active custom position
+ *    (`docs/rules/multiplayer-adjudication.md` §4 Fixture 4a) is played into a
+ *    real snapshot-batch mate that removes two controllers, the next active
+ *    controller then loses on time, and the resulting winner is checked through
+ *    the board, retained armies, controllers, statuses, history order, awards,
+ *    selection, post-terminal rejection, the shipped schema subpath, a versioned
+ *    V1 snapshot round trip, an atomic invalid load, both `undo()` steps and
+ *    `reset()`.
+ * 2. An **opening-to-terminal administrative match**
+ *    (`docs/fixtures/opening-to-terminal-administrative-match.md`, the executable
+ *    twin of the match in `src/quaternity.test.ts`) starts from the package's own
+ *    reviewed opening position, plays one real public committed move per army,
+ *    expires a pending draw offer inside White's next move and ends through the
+ *    three `001/D45` freezes; the winner, the untouched board, the offer
+ *    expiry/undo coupling, the V1 snapshot replay and `reset()` are asserted.
+ *
+ * Fixture 1 is deliberately a **lifecycle** fixture, not proof that the official
+ * opening position can reach that custom position. Fixture 2 is deliberately
+ * labelled an **administrative** match: its winner comes from a freeze, not from
+ * a mate, so it is **not a proof of opening-to-mate** and claims no complete
+ * engine. Neither fixture decides an outcome for the `[open]` checked-non-actor
+ * edge (001/D39–001/D41, 001/D44): every action here is an ordinary legal move or
+ * the 001/D45 administrative freeze. The packaging-level "no sources shipped"
+ * checks stay in `consumer-test.sh`, which tars the same artifact this consumer
+ * runs against.
  */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
@@ -275,3 +287,157 @@ assert.deepEqual(reloaded.status(), {
 });
 assert.deepEqual(reloaded.outcome(), { kind: "in-progress" });
 assert.deepEqual(reloaded.history(), []);
+
+// --- Opening-to-terminal administrative match ---------------------------------
+//
+// The reviewed opening position (001/D9) is played with one real committed move
+// per army and then ended by the three 001/D45 freezes, so the winner is an
+// administrative winner, not a mate.
+
+/** Commit one documented match move after checking the public committable set. */
+function commitDocumented(game, from, to, next) {
+  assert.ok(
+    game.moves().some((move) => move.from === from && move.to === to),
+    `${from}-${to} must be publicly committable`,
+  );
+  const event = game.move({ from, to });
+  assert.deepEqual(event.awards, []);
+  assert.deepEqual(event.selection, { kind: "next", player: next });
+}
+
+const match = new Quaternity();
+assert.equal(
+  match.position().board.size,
+  64,
+  "the opening fixture has 64 pieces",
+);
+assert.equal(match.turn(), "white");
+assert.deepEqual(match.outcome(), { kind: "in-progress" });
+
+commitDocumented(match, "b4", "c2", "red");
+commitDocumented(match, "d11", "b10", "black");
+commitDocumented(match, "j9", "l10", "green");
+commitDocumented(match, "i2", "g3", "white");
+
+// White offers a draw and then moves: the offer expires inside that one move
+// event, so a single undo() will restore it (001/D45 §1 O1).
+assert.deepEqual(match.proposeDraw(), {
+  kind: "draw-proposal",
+  proposer: "white",
+});
+assert.deepEqual(match.pendingDraw(), { proposer: "white", acceptedBy: [] });
+commitDocumented(match, "a1", "a2", "red");
+assert.equal(match.pendingDraw(), null);
+
+// The three interchangeable freezes, in clockwise order, leave White the lone
+// active controller. No board square changes and no batch is applied.
+assert.deepEqual(match.recordTimeLoss("red").selection, {
+  kind: "next",
+  player: "black",
+});
+assert.deepEqual(match.resign("black").selection, {
+  kind: "next",
+  player: "green",
+});
+assert.deepEqual(match.recordWalkover("green").selection, {
+  kind: "winner",
+  winner: "white",
+});
+assert.deepEqual(match.outcome(), { kind: "winner", winner: "white" });
+assert.deepEqual(match.status(), {
+  white: "active",
+  red: "frozen",
+  black: "frozen",
+  green: "frozen",
+});
+assert.equal(
+  match.position().board.size,
+  64,
+  "an administrative freeze touches no square",
+);
+assert.deepEqual(
+  [...match.position().board.entries()]
+    .filter(([, piece]) => piece.type === "king")
+    .map(([square]) => square)
+    .sort(),
+  ["a12", "a2", "l1", "l12"],
+  "every king, including the frozen ones, stays on the board",
+);
+assert.deepEqual(
+  match.history().map((event) => event.kind),
+  [
+    "move",
+    "move",
+    "move",
+    "move",
+    "draw-proposal",
+    "move",
+    "freeze",
+    "freeze",
+    "freeze",
+  ],
+);
+
+// Terminal atomicity: every board and administrative action is rejected and
+// changes nothing (001/D35, 001/D45).
+for (const action of [
+  () => match.move({ from: "a1", to: "a2" }),
+  () => match.pass(),
+  () => match.moves(),
+  () => match.proposeDraw(),
+  () => match.resign("white"),
+  () => match.recordTimeLoss("black"),
+  () => match.recordWalkover("green"),
+]) {
+  assertAtomic(match, action, /the game is over/, "a terminal match action");
+}
+assert.deepEqual(match.outcome(), { kind: "winner", winner: "white" });
+
+// The V1 snapshot replays the whole match into a fresh instance (001/D10).
+const matchSnapshot = JSON.parse(JSON.stringify(match.snapshot()));
+assert.deepEqual(matchSnapshot.actions, [
+  { kind: "move", from: "b4", to: "c2", promotion: null },
+  { kind: "move", from: "d11", to: "b10", promotion: null },
+  { kind: "move", from: "j9", to: "l10", promotion: null },
+  { kind: "move", from: "i2", to: "g3", promotion: null },
+  { kind: "draw-proposal" },
+  { kind: "move", from: "a1", to: "a2", promotion: null },
+  { kind: "freeze", action: "time-loss", player: "red" },
+  { kind: "freeze", action: "resign", player: "black" },
+  { kind: "freeze", action: "walkover", player: "green" },
+]);
+const matchReplay = new Quaternity();
+matchReplay.loadSnapshot(matchSnapshot);
+assert.deepEqual(matchReplay.snapshot(), matchSnapshot);
+assert.deepEqual(matchReplay.history(), match.history());
+assert.deepEqual(matchReplay.outcome(), { kind: "winner", winner: "white" });
+
+// One undo() per event: the three freezes, then the move that expired the offer,
+// which restores the pending offer with its recorded votes (001/D45).
+matchReplay.undo();
+assert.deepEqual(matchReplay.outcome(), { kind: "in-progress" });
+assert.equal(matchReplay.turn(), "green");
+matchReplay.undo();
+matchReplay.undo();
+assert.equal(matchReplay.status().red, "active");
+matchReplay.undo();
+assert.deepEqual(matchReplay.pendingDraw(), {
+  proposer: "white",
+  acceptedBy: [],
+});
+assert.equal(matchReplay.turn(), "white");
+assert.equal(matchReplay.position().board.get("a1")?.type, "king");
+assert.equal(matchReplay.history().length, 5);
+for (let remaining = 0; remaining < 5; remaining += 1) {
+  matchReplay.undo();
+}
+assert.deepEqual(matchReplay.history(), []);
+assert.equal(matchReplay.position().board.size, 64);
+assert.deepEqual(matchReplay.outcome(), { kind: "in-progress" });
+
+match.reset();
+assert.equal(match.turn(), "white");
+assert.equal(match.position().board.size, 64);
+assert.equal(match.pendingDraw(), null);
+assert.deepEqual(match.history(), []);
+assert.deepEqual(match.outcome(), { kind: "in-progress" });

@@ -247,3 +247,49 @@
   a loud `browser-consumer: FAILED — …` line, so that hang cannot come back
   silently. `toolkit/scripts/packageManifest.test.ts` pins the probe's wiring
   inside `make verify`.
+- docs: add `docs/fixtures/opening-to-terminal-administrative-match.md`, the
+  executed expected-outcome fixture (spec 001/D11) of one match from the reviewed
+  opening position to a terminal winner. It records nine actions: one real
+  committed coordinate move by each army, a draw proposal, the move that expires
+  it and the three `001/D45` freezes. The document labels the result plainly as
+  an **opening-to-terminal administrative match** — the winner comes from a
+  freeze, not a mate — and states that it is **not a proof of opening-to-mate**,
+  proves no assimilation from the opening, decides nothing for the `[open]`
+  checked-non-actor edge and claims no complete engine. The fixture is
+  registered in spec 001's fixture list; no decision record was added and no
+  rule policy changed.
+- test: add the opening-to-terminal administrative match to
+  `src/quaternity.test.ts` as a full-match test with its source-linked fixture.
+  It commits one publicly committable move per army from the reviewed opening
+  position, offers a draw and expires it inside White's next move, then freezes
+  Red on time, Black by resignation and Green by walkover into the lone-active
+  winner; the terminal outcome, statuses and untouched 64-piece board, the
+  terminal atomic rejection of every board and administrative action, the
+  one-event undo (including the offer restored by undoing the expiry move), the
+  V1 snapshot replay into a fresh instance and `reset()` are asserted. The
+  document-sync test parses the fixture's own fenced JSON action log and its §3
+  "Expected after" column and requires both to equal the actions and turn
+  selections the engine recorded, so a wrong, missing or extra documented action
+  fails the gate. No engine change was needed: the red step was the missing
+  fixture document, and no code was invented for it.
+- test: extend the installed-package integration consumer
+  (`toolkit/consumers/integration-consumer.mjs`) with the same
+  opening-to-terminal administrative match, so `make integration` now proves the
+  published built package plays both complete-game lifecycles: the constructed
+  §4 Fixture 4a mate-and-freeze lifecycle and the reviewed-opening administrative
+  match with its offer expiry, undo coupling, snapshot replay and reset.
+- docs: add `docs/usage.md` — concise runnable examples of the public API
+  (opening position and committed moves, attack/check queries, an administrative
+  finish, snapshot save/restore, draw offers with one-event undo, and error
+  handling) — and `docs/compatibility.md`, the chess.js-style compatibility
+  matrix for this four-player library, which marks each analogue as equivalent,
+  renamed, partial or unsupported and restates that there is no SAN, FEN or PGN
+  compatibility (001/D4). `toolkit/scripts/docs-examples.test.ts` executes every
+  fenced `ts` example in both documents through a child Node process in
+  `make test`, so a documented example that drifts from the real API fails the
+  gate. Its install section states that the package is not yet published
+  (`"private": true` until the owner performs a deliberate release), that
+  `npm install quaternits` applies only after that release and that checkout
+  users build and pack locally with `make build`/`npm pack` or exercise the
+  packed package through `make consumer-test`; it asks for no npm publish. The
+  documents are linked from `README.md`.
