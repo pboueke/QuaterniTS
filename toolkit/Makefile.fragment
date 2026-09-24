@@ -31,6 +31,14 @@ podman run --rm --userns=keep-id:uid=1000,gid=1000 \
 	$(TOOLKIT_IMAGE) bash -lc '$(1)'
 endef
 
+# Host-side preflight: fail loudly when rootless Podman is unusable, so no gate
+# can skip a check or report a fake result. It verifies a usable rootless
+# Podman, not that the pinned image runs; the gate targets that follow actually
+# execute the image. `make verify`, the git hooks and CI all start here.
+.PHONY: preflight
+preflight: ## Fail loudly unless rootless Podman is usable
+	bash $(TOOLKIT_DIR)/scripts/preflight.sh
+
 .PHONY: toolkit-image
 toolkit-image: $(TOOLKIT_IMAGE_STAMP) ## Build the digest-pinned toolkit image
 

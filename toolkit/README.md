@@ -15,6 +15,8 @@ From the repository root:
 
 ```sh
 make help          # list targets
+make preflight     # fail loudly unless rootless Podman is usable
+make install-hooks # opt this checkout into .githooks (host-side; no Podman)
 make toolkit-image # build the pinned image (once; also runs on demand)
 make fmt-check     # Prettier check
 make lint          # ESLint
@@ -94,6 +96,47 @@ Exceptions live in `toolkit/audit-exceptions.json` and are a JSON array of:
 `advisory` matches either the GHSA id or the advisory URL. A non-empty `reason`
 and a future `expires` date are required; an expired or blank exception fails the
 gate. Keep the list empty unless a reviewed exception is genuinely needed.
+
+## Rootless Podman preflight
+
+`make preflight` runs `toolkit/scripts/preflight.sh` and fails loudly when
+`podman` is missing, when `podman info` cannot report a rootless runtime, or
+when Podman is not rootless. It verifies a usable rootless Podman, not that the
+pinned image runs; `make verify` starts with it and both git hooks call it, so
+an unusable container runtime stops a gate instead of skipping a check or
+reporting a fake result, and the gate targets that follow execute the image.
+
+## Delivery: opt-in hooks and GitHub Actions
+
+`.githooks/pre-commit` runs `make preflight fmt-check lint types version-check`;
+`.githooks/pre-push` runs the full `make verify`, the same target CI runs. Both
+hooks are opt-in and installed explicitly from the repository root by a
+host-side target that needs no Podman:
+
+```sh
+make install-hooks                        # enable (repo-local core.hooksPath)
+git config --local --unset core.hooksPath # disable
+```
+
+`make install-hooks` runs `toolkit/scripts/install-hooks.sh` and sets only the
+repo-local `core.hooksPath` (never global or system). It is idempotent, refuses
+to overwrite a different local hooks path, and fails without mutating a
+directory that is not a Git repository.
+
+`.github/workflows/ci.yml` runs for pull requests and pushes to `main`. It
+checks out a fresh tree, installs only the rootless Podman host prerequisite
+with apt (`podman`, `uidmap`, `slirp4netns`, `netavark`, `aardvark-dns`) plus
+the subordinate id ranges rootless Podman needs, then runs `make preflight` and
+`make verify` as the unprivileged runner user. It requests `contents: read`,
+uses no secrets and declares no service stack, and it never installs Node or
+runs npm on the runner: every tool stays inside the digest-pinned image.
+
+**UNPROVEN:** no GitHub run has been observed, so the workflow is a claim only
+after the owner pushes it and watches a run. A green `make verify` on a
+developer machine is not evidence of a green CI run. Prettier parses this
+workflow as YAML during `make fmt-check`, and
+`toolkit/scripts/ciWorkflow.test.ts` pins its structure, but neither executes
+GitHub Actions.
 
 ## Pending and intentionally absent
 

@@ -14,6 +14,10 @@
 - feat: add king-by-king checkmate detection in `src/mate.ts` and the pure
   snapshot/batch mate adjudication driver in `src/batchAdjudication.ts`.
 - feat: add the assimilation transfer unit in `src/assimilation.ts`.
+- feat: add the pure internal turn-order and last-active-winner selector in
+  `src/turn.ts`, advancing clockwise from White over the frozen/eliminated
+  players and rejecting the zero-active state instead of fabricating a draw
+  (spec 001/D35; `docs/rules/multiplayer-adjudication.md` §7 Fixture 7/7b).
 - feat: add the reviewed 64-piece opening fixture in
   `src/fixtures/openingPosition.ts`.
 - docs: record the fixture's source and exception table in
@@ -54,3 +58,23 @@
 - fix: re-check the pawn capture and advanced-pawn commitment vectors against
   the official tutorial examples after independent review, and apply the
   findings to `docs/rules/pawn-vectors.md` (spec 001/D28, 001/D29).
+- ci: add `.github/workflows/ci.yml`, which checks out a fresh tree on pull
+  requests and pushes to `main`, installs only the rootless Podman host
+  prerequisite, and runs `make preflight` plus the same `make verify` gate with
+  `contents: read`, no secrets and no service stack (spec 001/D8, 001/D12).
+- chore: add the rootless Podman preflight in `toolkit/scripts/preflight.sh`
+  and start `make verify` with it, so an unusable container runtime fails
+  loudly instead of skipping a check.
+- chore: add the opt-in Bash hooks `.githooks/pre-commit` (preflight,
+  formatting, lint, types, changelog/version check) and `.githooks/pre-push`
+  (full `make verify`), installed explicitly with the host-side
+  `make install-hooks` target (spec 001/D19).
+- test: cover the preflight's fail-closed outcomes, the hooks' syntax, mode and
+  invoked targets, and the workflow's YAML structure under `toolkit/scripts/`.
+- docs: document the workflow and the opt-in hooks in `README.md` and
+  `toolkit/README.md`, and record that no GitHub run has been observed yet.
+- chore: add the host-side `make install-hooks` target and
+  `toolkit/scripts/install-hooks.sh`, which opt a checkout into the
+  version-controlled `.githooks` through a repo-local `core.hooksPath`; the
+  installer is idempotent, refuses to overwrite a different hooks path and never
+  reads or writes global or system config, and it needs no Podman.

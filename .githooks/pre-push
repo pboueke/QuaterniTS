@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+# QuaterniTS opt-in pre-push hook: the full local gate before a push.
+#
+# `make verify` is the same target GitHub Actions runs, and it starts with the
+# rootless-Podman preflight, so a push cannot outrun the local gate and an
+# unusable container runtime stops the push instead of skipping checks.
+#
+# Install explicitly from the repository root (opt-in, host-side, no Podman):
+#   make install-hooks
+# Disable with: git config --local --unset core.hooksPath
+set -euo pipefail
+
+exec make verify

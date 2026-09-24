@@ -1,0 +1,53 @@
+# QuaterniTS continuous integration.
+#
+# The workflow is the backstop to the local gate, not a substitute: it checks
+# out a fresh tree, installs only the rootless Podman host prerequisite, and
+# runs the same `make verify` target a developer runs, so every tool command
+# stays inside the digest-pinned toolkit image. No Node or npm runs on the
+# runner.
+#
+# UNPROVEN: no GitHub run has been observed yet. This file claims nothing until
+# the owner pushes it and watches a run.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: the gate only reads the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: make verify (pinned rootless Podman toolkit)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Install the rootless Podman host prerequisite
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            podman uidmap slirp4netns netavark aardvark-dns
+          # Rootless Podman needs subordinate id ranges for the runner user.
+          runner="$(id -un)"
+          grep -q "^${runner}:" /etc/subuid ||
+            sudo usermod --add-subuids 100000-165535 "${runner}"
+          grep -q "^${runner}:" /etc/subgid ||
+            sudo usermod --add-subgids 100000-165535 "${runner}"
+
+      - name: Preflight rootless Podman
+        run: make preflight
+
+      - name: Run the toolkit gate on the fresh checkout
+        run: make verify

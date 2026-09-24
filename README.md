@@ -46,6 +46,11 @@ tests; none of them is an assembled engine:
 - `src/batchAdjudication.ts` — the pure snapshot/batch mate adjudication driver
   (Phase 3D).
 - `src/assimilation.ts` — the pure assimilation transfer unit (Phase 3D1).
+- `src/turn.ts` — the pure internal turn-order and last-active-winner selector
+  over a caller-supplied status map (spec 001/D35). It skips frozen and
+  eliminated players, returns the sole active controller as the winner and
+  rejects the zero-active state rather than fabricating a draw; it is not the
+  committed turn path.
 - `src/fixtures/openingPosition.ts` — the reviewed 64-piece opening fixture the
   tests build on.
 
@@ -56,8 +61,13 @@ tests; none of them is an assembled engine:
   consumed as a library yet.
 - No committed action path, no history/undo and no versioned JSON snapshot
   persistence (spec 001/D10).
-- No packaged consumer tests, no JSON schema/contract drift check, no CI
-  workflow and no git hooks.
+- No packaged consumer tests and no JSON schema/contract drift check
+  (`contract-check`, `consumer-test` and `integration` are Phase 4 work and are
+  intentionally absent rather than stubbed).
+- No proven continuous integration: `.github/workflows/ci.yml` runs the same
+  gate on a fresh checkout, but no GitHub run has been observed yet, and the
+  opt-in hooks in `.githooks/` are installed only by the explicit host-side
+  `make install-hooks` target, never automatically.
 - No release automation yet: `CHANGELOG.md` holds `0.1.0` and
   `make version-check` enforces version drift. The npm `private` flag prevents
   accidental package publication until the owner deliberately prepares a release
@@ -96,6 +106,7 @@ Node install (spec 001/D5). These targets are the local gate:
 
 ```sh
 make help        # list available targets
+make preflight   # fail loudly unless rootless Podman is usable
 make fmt-check   # Prettier check
 make lint        # ESLint
 make types       # tsc --noEmit
@@ -103,7 +114,7 @@ make test        # node --test with the 100% line/branch coverage gate
 make audit       # block on unexcepted HIGH/CRITICAL npm advisories
 make version-check # CHANGELOG.md version vs package metadata
 make version-sync  # explicit rewrite of package version fields (never in verify)
-make verify      # fmt-check + lint + types + version-check + test + audit
+make verify      # preflight + fmt-check + lint + types + version-check + test + audit
 ```
 
 `CHANGELOG.md` is the only hand-edited version (spec 001/D7): it holds exact
@@ -116,8 +127,47 @@ fields. `make verify` never rewrites files.
 
 `make verify` runs only the gates that exist today. `contract-check`,
 `consumer-test` and `integration` are Phase 4 work and are intentionally absent
-rather than stubbed; no CI workflow exists yet, so the gate currently runs only
-on a developer machine.
+rather than stubbed.
+
+`make preflight` runs `toolkit/scripts/preflight.sh` and fails loudly when
+`podman` is missing, when `podman info` cannot report a rootless runtime, or
+when Podman is not rootless. It verifies a usable rootless Podman, not that the
+pinned image runs; `make verify` starts with it and then executes the image for
+every gate, so an unusable container runtime stops the gate instead of skipping
+a check.
+
+### Opt-in git hooks
+
+`.githooks/pre-commit` runs `make preflight fmt-check lint types version-check`
+for fast feedback, so changelog/version drift is caught at commit (spec
+001/D19), and `.githooks/pre-push` runs the full `make verify`. They are opt-in
+and installed explicitly from the repository root by a host-side target that
+needs no Podman:
+
+```sh
+make install-hooks                        # enable (repo-local core.hooksPath)
+git config --local --unset core.hooksPath # disable
+```
+
+`make install-hooks` runs `toolkit/scripts/install-hooks.sh` and sets only the
+repo-local `core.hooksPath` (never global or system). It succeeds when
+`.githooks` is already active, refuses to overwrite a different local hooks
+path, and fails without mutating a directory that is not a Git repository.
+
+### Continuous integration (UNPROVEN)
+
+`.github/workflows/ci.yml` runs for pull requests and pushes to `main`. It
+checks out a fresh tree, installs only the rootless Podman host prerequisite
+with apt, then runs `make preflight` and `make verify` as the unprivileged
+runner user. It requests `contents: read`, uses no secrets and declares no
+service stack, and it never installs Node or runs npm on the runner: the whole
+toolchain stays inside the digest-pinned image, so CI runs the same gate a
+developer runs.
+
+**No GitHub run has been observed yet.** The workflow is unproven until the
+owner pushes it and watches a run; a green local `make verify` is not evidence
+of a green CI run, and CI is a backstop rather than a substitute for the local
+gate.
 
 ## Publishing
 
@@ -126,4 +176,6 @@ package id is `quaternits`; `package.json` keeps `"private": true` as a safeguar
 against an accidental npm release, not a standing prohibition on publishing the
 repository. The owner will remove that safeguard as part of a deliberate package
 release (`001/D42`, `001/D43`). The library is not yet a complete engine or an
-installable package; the consumer, schema and CI checks above remain to be built.
+installable package; the packaged consumer and schema checks above remain to be
+built, and the CI workflow stays unproven until the owner pushes it and watches
+a run.

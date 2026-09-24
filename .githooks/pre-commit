@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+#
+# QuaterniTS opt-in pre-commit hook: fast feedback before a commit.
+#
+# Git runs hooks from the worktree root, so the make targets resolve without a
+# `cd`. The hook runs only real targets: the rootless-Podman preflight, then
+# formatting, lint, type and changelog/version checks inside the pinned toolkit
+# image. It never skips or weakens a gate and fails visibly when rootless Podman
+# is unusable.
+#
+# Install explicitly from the repository root (opt-in, host-side, no Podman):
+#   make install-hooks
+# Disable with: git config --local --unset core.hooksPath
+set -euo pipefail
+
+exec make preflight fmt-check lint types version-check

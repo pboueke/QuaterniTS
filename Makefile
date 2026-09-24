@@ -52,8 +52,16 @@ version-check: $(TOOLKIT_NPM_CI_STAMP) ## Check CHANGELOG.md is the authority fo
 version-sync: $(TOOLKIT_NPM_CI_STAMP) ## Rewrite package version fields from CHANGELOG.md (explicit; never part of verify)
 	$(call toolkit-run,npm run version-sync)
 
+# Opt-in git hooks. Host-side only: installing the hooks must not require Podman
+# or the toolkit image, so this target calls the host script directly. The
+# script sets the *repo-local* core.hooksPath explicitly and is safe to re-run
+# (see toolkit/scripts/install-hooks.sh).
+.PHONY: install-hooks
+install-hooks: ## Opt this checkout into the version-controlled .githooks (repo-local; no Podman)
+	bash $(TOOLKIT_DIR)/scripts/install-hooks.sh
+
 .PHONY: verify
-verify: fmt-check lint types version-check test audit ## Run every currently implemented gate
+verify: preflight fmt-check lint types version-check test audit ## Run every currently implemented gate
 
 .PHONY: clean
 clean: ## Remove toolkit stamps and coverage output
