@@ -1,106 +1,120 @@
-# Adopt the reference template for quaternity.js and build the first Quaternity rules library
+# 001 — QuaterniTS rules library
 
-## Why / Context
+QuaterniTS is an unofficial, community-driven, headless TypeScript library for
+Quaternity. It models the four-player 12 × 12 game; it does not provide a UI, server,
+clock, opponent or board renderer. The API may resemble chess.js where useful, but
+chess.js notation, data formats and rules are not compatibility promises. This
+specification describes the intended library and release checks, not features already
+shipped.
 
-This is a new, empty Git repository, not a copy of the reference template. The intended product is a headless TypeScript library for Quaternity, a four-player chess-inspired game, for Node.js and modern browsers. Like [chess.js](https://github.com/jhlywa/chess.js), it should generate and validate legal moves, maintain a position and history, and report game state, not render a board or choose moves. Familiar API shapes are a design aid, not a claim that two-player chess positions, notation or return values are interchangeable.
+The [numbered decisions](decisions.md) (`001/D1`–`001/D43`) are the current decision
+index. Source-linked examples and detailed rule fixtures live in
+[`docs/fixtures/opening-position.md`](../../../fixtures/opening-position.md),
+[`docs/rules/pawn-vectors.md`](../../../rules/pawn-vectors.md),
+[`docs/rules/multiplayer-adjudication.md`](../../../rules/multiplayer-adjudication.md)
+and [`docs/rules/d38-coordinate-search.md`](../../../rules/d38-coordinate-search.md).
+When these disagree with an older provisional decision, use the later correction and the
+current policy. Cite decisions as `001/D<n>`.
 
-Adopt the reference template's intent-first, replaceable-element, reproducible-toolchain and machine-checked quality practices, without importing its Python HTTP service. This document is the first spec in this repo. It is a spec-only approval artifact; nothing here authorizes starting the implementation before this spec is approved.
+## Rules and model
 
-Rules authority, in order: [official basic rules](https://www.quaternity.com/play-quaternity) and the [official illustrated quick rules](https://play.quaternity.com/static/media/quick_start_rules.ee41e5de.pdf); the [patent](https://patents.google.com/patent/US20150352433A1/en) is supporting evidence, not an override. The quick-rules board picture places White bottom-left, Red top-left, Black top-right and Green bottom-right when viewed with a1 at bottom-left. Patent prose assigns the latter two corners differently and its pawn lists have omissions/duplicates. No implementation may silently resolve such conflicts from ordinary chess conventions. The official rules do not completely specify all multiplayer adjudication cases; a reviewed, test-first policy for each such case is part of implementation scope.
+- **Authority:** the [official basic rules](https://www.quaternity.com/play-quaternity)
+  and
+  [illustrated quick rules](https://play.quaternity.com/static/media/quick_start_rules.ee41e5de.pdf)
+  govern; the [patent](https://patents.google.com/patent/US20150352433A1/en) is
+  supporting evidence only. A reviewed 64-piece fixture transcribes the official opening
+  illustration and tutorial data, including four kings and eight advanced central pawns.
+  Record any source ambiguity rather than inventing a two-player chess rule (`001/D2`,
+  `001/D9`, `001/D24`).
+- **Identity:** pieces retain their original army colour and pawn orientation after
+  assimilation. Controllers own turns and may command several armies; players may be
+  active, frozen or eliminated. Turns advance clockwise from White to the next active
+  controller, one action at a time.
+- **Moves:** orthodox non-pawn geometry on the 12 × 12 board; no castling. Pawns move
+  one square, never double-step or en passant. Ordinary pawns capture on both forward
+  diagonals. Advanced central pawns choose and keep a direction when they leave their
+  central main diagonal; a capture toward the centre leaves them uncommitted, while a
+  side capture commits to a direction **from its landing square**. Promotion is an
+  explicit same-army queen, rook, bishop or knight choice at the applicable edge
+  (`001/D28`, `001/D29`).
+- **Safety and adjudication:** check uses hostile **controllers**, not merely piece
+  colours; every king owned by the moving controller must remain safe. Kings cannot be
+  captured directly. A mate is credited to the player completing the position, including
+  indirect mate. Evaluate all on-board kings, including frozen kings under hypothetical
+  active defence, in atomic snapshot batches; then resolve cascades. If a controller
+  survives with another king, only the mated king's army transfers. If it loses its last
+  king, all its controlled armies transfer, with piece-level deduplication (`001/D26`,
+  `001/D30`–`001/D38`). Frozen non-king pieces remain inert, blocking and capturable. A
+  two-active-player stalemate is a draw; with more than two active players an immobile,
+  non-mated player may pass. A lone active controller wins. Draw offers require the
+  active turn and unanimous acceptance; administrative actions after game over are
+  rejected.
+- **Unresolved game edge:** the official outcome for a controller with a nonempty
+  internal pre-batch defence set but no safe public committed move remains unknown. The
+  decided software policy is fail-closed, not a fabricated mate, pass or draw.
+  `UnresolvedAdjudicationError` is reserved for the checked-successor guard or an
+  on-turn nonempty internal set with an empty public set; an actor-safety rejection is
+  an ordinary illegal move. The guard is checked after **every** turn-advancing action
+  (including a pass without a phantom batch), only when the next active controller is
+  checked. An unchecked successor is not vetoed; its own on-turn unresolved state fails
+  closed. Internal moves must not be advertised as committable. The rule outcome,
+  general assembled commit path and complete-engine claim remain open pending evidence;
+  this is a **rules/completeness limitation**, not a prohibition on making the
+  repository public (`001/D38`–`001/D41`).
 
-## Scope
+An ambiguous gameplay policy needs an official source or clearly labelled inference, a
+reviewed coordinate/algorithmic expected-outcome fixture and a failing test before
+implementation. Do not silently substitute ordinary chess rules (`001/D11`).
 
-1. Establish the repo's spec workflow, portable agent guidance, package identity, documentation and release policy for a TypeScript library. Do not import the template's Git history or hello-world application.
-2. Build the pure, deterministic Quaternity rules engine and public, typed chess.js-inspired API described below, including the complete default four-army game, custom positions, history/undo and round-trippable persistence.
-3. Port the reference template's tooling, tests, coverage, hooks and security discipline to TypeScript in a rootless Podman toolkit. Wire the same toolkit verification into GitHub Actions; no Python application runtime or HTTP service is shipped.
-4. Publish usage examples, rule/fixture provenance, API compatibility matrix, serialization schema, contribution guidance and release-readiness instructions. The package remains private/unpublished at this stage.
+## Library contract
 
-Implementation order after approval: (1) bootstrap the toolkit, spec conventions and red fixture tests; (2) validate the opening position and core movement/attacks; (3) add multiplayer legality, adjudication and TDD policy decisions; (4) add persistence, public package/consumer tests and docs; (5) prove fresh-clone local and CI gates. Each phase is reviewable and preserves a single authority for each concern. No phase is permission to ship an incomplete engine as complete.
+- Provide a `Quaternity` class, typed pieces/moves/status/events, legal move enumeration
+  and commit, attack/check queries, pass/resign/time-loss/walkover/draw actions,
+  validated opening and custom positions, history/undo and reset. Illegal input and
+  invalid actions must be atomic. Public `moves()` must report **committable** moves,
+  not the internal mate-oracle set; document analogous and deliberately unsupported
+  chess.js methods.
+- Define deterministic unambiguous long-coordinate actions and a versioned JSON snapshot
+  with a schema, strict load validation, an event log, replay and full undo. Preserve
+  controllers, army colours, advanced-pawn direction, statuses, votes and outcomes. No
+  exposed mutable board may bypass validation. Invalid snapshots and replays leave the
+  current instance unchanged (`001/D10`).
+- Package strict TypeScript declarations and a documented export map for Node ESM/CJS
+  and browser consumers; no filesystem, network or Node-only runtime dependency in move
+  calculation. Tests import the built package as a consumer, not just source.
 
-### Adoption map and teardown
+## Tooling and delivery
 
-| Reference template element | Disposition and implementation work |
-| --- | --- |
-| `src/` | **Swap** Python hello-world and tests for `src/` TypeScript rules modules with adjacent unit tests and separate public-contract tests. Never copy `src/ktb_api/`. |
-| `docs/oas/` | **Delete** OpenAPI generator and `openapi.json`: no HTTP contract. **Swap** the drift-checked contract idea for committed JSON snapshot schema and API/type examples, generated or validated offline. |
-| `docs/spec/` | **Keep/adapt** local sequence, active/archive lifecycle, spec-only approval, append-only numbered decisions, tracker field and solo downgrade. Establish `docs/spec/README.md` during implementation; this spec is its bootstrap contract. |
-| `toolkit/` | **Swap** Python/uv/ruff/mypy/pytest/pip-audit image for digest-pinned Node, frozen npm lockfile, TS compiler, formatter/linter, tests/coverage and npm dependency audit; keep disposable rootless Podman execution and named caches. |
-| `toolkit/integration/` | **Swap** live HTTP/OAS checks for installed-package consumer tests in Node ESM, Node CJS and a browser bundle, including exported declarations and snapshot reloading. No live stack or health endpoint. |
-| `hooks/` | **Keep/adapt** readable Bash hooks calling make targets: fast changed-file checks at commit; full verification at push; changelog version/bump checks and conditional audit. CI repeats the same gate on committed source. |
-| `container/` | **Delete** application image, pod driver, service table, OCI service labels and `stack.sh`; the toolkit image is a dev/test artifact, not a deployed service. |
-| `sandbox/` | **Delete/defer** Claude-specific runtime, proxy, service network and redeploy broker. An optional later agent sandbox must use the same toolkit, separate credentials and no raw container socket; it is not required for v0. |
-| `.claude/` | **Swap** product-specific Claude config for tool-agnostic `AGENTS.md` and minimal optional harness adapters. Preserve the no-agent-commit/push/tag/revert policy and destructive-action confirmation without copying Python/stack rules. |
+The local toolchain is a digest-pinned Node image in rootless Podman with `npm ci` from
+a frozen lockfile. Its image and cache names begin `quaternits-`. `make verify` checks
+formatting, lint, types, version drift, tests/coverage and the fail-closed HIGH/CRITICAL
+dependency audit; add real `contract-check`, `consumer-test` and installed-package
+integration gates before claiming those checks pass. Require **100% line and branch
+coverage**, including detection of source files omitted from test imports. Git hooks
+provide fast feedback; GitHub Actions must execute the same toolkit gate against a fresh
+checkout. Do not weaken a gate or invent a green CI result (`001/D5`–`001/D8`,
+`001/D12`, `001/D18`, `001/D19`).
 
-There is no template tree to gut: `src/ktb_api/`, `container/ktb-api/`, `toolkit/integration/test_api.py`, `docs/oas/generate.py`, `/health`, `KTB_API_URL`, the two `SERVICES` tables and template dependencies must never enter this repository. Remove any copied `ktb` identifiers, examples and config if encountered; no `ktb`-named survivor is intended. Replace the root README, Make vocabulary and element READMEs with library-specific truth, rather than promising nonexistent service targets.
+Use `CHANGELOG.md`'s top `## <semver>` heading as the single authored version, initially
+`0.1.0`; version sync is explicit. Ship examples, compatibility matrix, rule/fixture
+provenance, snapshot schema, public types and consumer smoke tests. The package is
+MIT-licensed for this project's original work, unofficial and intended for open
+distribution. `private: true` remains a temporary guard against accidental npm
+publication until the owner performs a deliberate release step; **publication is not
+blocked by a standing name/trademark/license approval gate**. Do not imply that MIT
+grants third-party game-name, rulebook or asset rights (`001/D42`, `001/D43`).
 
-## Out of scope
+## Completion criteria
 
-- A UI, chessboard widget, server, matchmaking, multiplayer transport, accounts, clocks, online arbitration or AI/search engine. The library records a caller-declared timeout but does not run a clock.
-- Ordinary two-player FEN/PGN/SAN compatibility, or a claim that chess.js can load this variant. A future spec may design variant-specific text notation; v0 uses versioned JSON and coordinate actions.
-- Public npm release, automatic tags, package-name reservation, trademark/license clearance and release automation. Choosing an SPDX license and verifying the name are prerequisites for any later public distribution, not implicit permissions here.
-- Transplanting Python coverage rules, the HTTP contract, CVE scanning of a nonexistent application image or an agent socket proxy. Do not retain unused scaffolding merely for template parity.
-
-## Requirements
-
-### Rules and authoritative fixtures
-
-- A 12 by 12 board with files `a` through `l` and ranks `1` through `12`, 64 pieces in four colored armies, one king per army and clockwise turns beginning with White. The default position is transcribed square by square from the official quick-rules illustration into a checked-in golden fixture: all squares and piece colors/types counted, every king and both advanced central pawns per army identified, a visual cross-check documented and explicitly reviewed **before** move generation is built. The illustrated corner color arrangement takes precedence over the patent's contradictory corner assignments. A separate source/exception table records any square that the picture cannot resolve. Never synthesize a missing pawn from patent prose.
-- Distinguish a piece's **army/color** (retained after assimilation), its **controller** (whose turn may move it), and a player's **active/frozen/eliminated** status. Preserve army identity, original pawn orientation and each advanced central pawn's direction/commitment through captures, transfer, persistence and undo. A controller may select from all armies it controls but still makes only one move on its turn. The turn cursor skips players no longer active.
-- Orthodox non-pawn piece movement on this board, without castling. Pawns move only one square, including their first move; no double-step or en passant. Promotion to same-army queen, rook, bishop or knight occurs on the destination square in the same move, with an explicit choice, unrestricted by previously captured pieces. The two advanced central pawns per army can choose a forward direction on their first non-main-diagonal move, remain uncommitted after a capture on the main diagonal, then retain their choice. Build reviewed coordinate examples for each orientation, both commitments, main-diagonal capture and promotion boundary before implementing them.
-- Generate pseudo-legal movement separately from legal moves and attacks. Validate the acting controller and the safety of its still-active king(s), including moves made with assimilated pieces, against **all hostile controlled armies**. A player cannot move an enemy or frozen army. Define attack queries by attacker **controller**, while result records retain the attacking army's color. Kings cannot be directly captured; checkmate removes a defeated king and transfers its surviving army to the player who completed the mating position, even when another army supplies the attack. Re-evaluate affected positions at each committed action, including an indirect or multiple mate; never use two-player next-turn-only mate detection as a substitute.
-- Resignation, declared time loss and walkover freeze that player's army in place; frozen pieces do not move, but their king can later be checkmated as if alive, including by an opposing king. A pass is legal only for an active, non-checkmated player with no legal move while more than two active players remain. A draw requires proposal by the player on turn and unanimous agreement of all other active players; a rejected proposal does not end play. Last surviving active king/controller wins. A two-player no-move situation, repeated positions, move-count draws and insufficient-material draws are **not** inherited from chess.js: no automatic result is inferred unless a rule policy and examples explicitly authorize it.
-- **Rules-policy/TDD gate:** before coding each ambiguous case, write a source-linked, human-reviewed expected-outcome table and failing tests (red), implement the minimal rule (green), refactor and run the full regression suite. In particular decide: self-check when one controller owns multiple kings; exactly when a frozen king's hypothetical defenses count; multiple/checkmate cascades and award order; whose moves/attacks count in indirect mate; advanced pawn attack vectors prior to commitment; two-player immobility and how draws are proposed/accepted without changing turn; terminal state if a frozen king remains. Record each resolution as an appended Decision here and a fixture/test, rather than allowing accidental behavior. If a policy cannot be approved, that feature and the claimed full-engine release are blocked, not silently stubbed.
-
-### Public API and data contract
-
-- Export a `Quaternity` class, named constants/types (`Square`, army color, controller, piece, move, status and event) and a standalone position validator. Typical use parallels `new Chess()`, `moves()`, `move()`, `undo()`, `history()`, `board()`, `get()`, `turn()`, `reset()` and `isGameOver()`; document examples using a four-player position. `moves({ square?, piece?, verbose? })` yields legal moves of the active controller, verbose entries including from/to, army, controller, capture/promotion and before/after state; nonverbose entries are deterministic long coordinates (for example `e5e6` and `e11e12q`). `move()` accepts that token or an explicit from/to/promotion object and throws an actionable error on illegal input without mutating state. `undo()` reverses an entire action including mate transfers, passes, frozen states and draw agreements. No exposed mutable board reference may bypass validation/history.
-- Expose explicit multiplayer state operations: `inCheck(player)`, `isCheckmate(player)`, `attackers(square, controller)`, `isAttacked(square, controller)`, `status()` with per-player state and winner/draw, `pass()`, `resign(player)`, `recordTimeLoss(player)`, `recordWalkover(player)`, `proposeDraw()` and `respondToDraw(player, accept)`. Agree in fixtures how out-of-turn administrative actions are sequenced and undone; all operations that change state are history events. Custom-position editing is allowed only through validated load/setup, not unchecked `put`/`remove` on a live match.
-- `load(snapshot)`, `snapshot()`, `reset()`, action-log replay and `history({ verbose? })` must round-trip every rule-relevant bit. Document a `schemaVersion: 1` JSON schema and canonical, deterministic ordering: board, immutable army colors, controller mapping, advanced-pawn directions, player states, turn, pending draw votes and outcome. Validate unknown version, off-board squares, impossible occupancy, broken kings/controller links, inconsistent pawn state and illegal replay atomically; bad input leaves the existing instance intact. The log includes explicit player, action kind, move/promotion and adjudication events; replay must reproduce the snapshot and undo chain. Keep action notation unambiguous for ranks 10 to 12 and promotion; no SAN/PGN/FEN aliases.
-- Document a **method-by-method chess.js compatibility matrix**: analogous operations above; `fen`, `loadPgn`, `pgn`, SAN, castling-rights, en-passant, chess.js-specific `isDraw`/`isStalemate`/`isThreefoldRepetition`/`isInsufficientMaterial`, comments/headers, null move and `perft` are not parity claims. Mark deliberate omissions or alternative APIs and behavior of invalid input. No chess.js source code is copied; it is a reference for ergonomics and goals only.
-- Emit strict TypeScript declarations; support Node ESM/CJS and browser bundlers from one package with explicit export map, no Node-only runtime dependency in the browser engine and no network/filesystem required to calculate a move. Tests import the **built package**, not only source. No implicit global mutable game state; two instances never affect each other.
-
-### Verification and delivery machinery
-
-- Ship a pinned, reproducible Node toolchain in a rootless Podman image (exact runtime/tool pins and verified base digest resolved during implementation), `package-lock.json` committed and `npm ci` enforced. One documented Linux host path requires only Podman, git, Bash and make. The root Makefile lists targets via `make help`; `make fmt-check lint types test contract-check consumer-test audit verify` are independently runnable, with `make verify` orchestrating them. Tool-specific versions/configs have one authority. Image is a disposable test tool, never a service.
-- Test-first fixtures cover the opening layout and per-piece legal/illegal moves in every orientation; pin/check, allied-control transfer, indirect/cascading mates, frozen and king attacks, promotion, pass, vote, game-over, invalid input, move/history/undo and snapshot/log replay. Add deterministic seeded playouts and invariant/property tests (no lost pieces on undo, no illegal king capture, snapshot/replay equality). Regression tests compare saved public examples, package imports and schema drift. Set **100% line and branch coverage** for engine and tooling TypeScript, with no silent skips, blanket ignores or generated-code inflation; reviewed structural exclusions must be explicit and separately justified. Coverage is a gate, not a retrospective target.
-- Pre-commit checks formatting/lint/schema/docs and changelog format, scoped to changed files where sound; pre-push runs `make verify` and checks a correct changelog bump. Every relevant dependency change triggers an npm audit with a documented HIGH/CRITICAL blocking policy, reason-plus-expiry exception format and loud offline/failure behavior; no scanner skip is silent. Hooks are worktree-scoped and bypassable. GitHub Actions runs the **same toolkit image and make verification** against the committed checkout on PRs and main, proves a non-root runner recipe (or fails visibly), checks the package consumers and audit, and blocks merge when required. No claim of green CI until that runner is actually demonstrated.
-- Start the product changelog fresh at its first release (`0.1.0` planned), with top semver header as version authority and typed entries. Sync package metadata from that authority in a deterministic drift-check target; avoid a second hand-edited version. Keep template release history out. Agent instructions prohibit agents committing, pushing, tagging or reverting and prohibit weakening gates to achieve green. Element READMEs explain why, use and replacement. No CI credentials or container API socket in the toolkit.
-
-## Definition of done
-
-- The spec alone is reviewed as a spec-only PR and approved by merge (or one clearly marked solo spec-only commit). Implementation starts **after** that. The implementation PR links each resolved rules policy and its red/green test evidence; decisions added later are append-only.
-- Official illustrated setup is checked against the fixture, with all 64 pieces and ambiguous squares accounted for; each rule-policy question above has a reviewed example and executable test. No unresolved rule blocker remains in an advertised feature.
-- `make help`, `make verify`, the hooks and the same GitHub Actions toolkit gate pass from a fresh supported Linux checkout; unit/property/consumer tests, typecheck, lints, 100% line and branch coverage, JSON schema drift and dependency audit all pass. A browser bundle and ESM/CJS import smoke test run against the packaged artifact.
-- Public API examples, complete chess.js compatibility matrix, rule provenance, event/JSON schema and round-trip/undo fixtures ship with the library. Invalid input tests prove atomic failure; a rules regression test proves frozen and assimilated-army behavior. A full match can end in a winner or an agreed draw.
-- `git grep -i ktb -- . ':(exclude)docs/spec/**'` finds no inherited product name; the historical names quoted in this spec are the only intentional exception. No `src/ktb_api/`, `docs/oas/`, service container, live HTTP integration or sandbox broker exists. No in-sandbox login is required because sandbox was explicitly deferred.
-- Document package name, license and trademark review as **unresolved publication gates**; keep the package private and do not publish. Move this spec to `docs/spec/archive/` only once the implementation is shipped and the above checks hold.
-
-## Decisions
-
-- D1. Start a fresh repo with selective reference template adoption, not a Python-template clone; allocate local spec `001` and approve intent before code (no inherited files/history exist).
-- D2. Use official basic/illustrated rules first; the picture governs the opening fixture over contradictory patent color/pawn prose. Document uncertainty and obtain review before implementation of each ambiguous rule (no invented authority).
-- D3. Deliver a complete headless v0.x rules library, not a UI, AI or service (chess.js's goal, adapted to Quaternity).
-- D4. Follow chess.js's ergonomic API where meaningful, but use four-player types and explicit deviations; no FEN/PGN/SAN compatibility claim (formats cannot encode this game unchanged).
-- D5. Use a rootless Podman TypeScript toolkit and a frozen npm lockfile, replacing Python tooling; do not require host Node (reproducible local gate).
-- D6. Enforce 100% line and branch coverage on first implementation, without a baseline or ad-hoc exclusions (greenfield gate).
-- D7. Start changelog/version history afresh at planned `0.1.0`, retain repo name quaternity.js, keep package private/unpublished pending license, name and trademark review (no template release lineage or implied publishing rights).
-- D8. Use GitHub Actions as required backstop to local hooks, executing the same toolkit verification; tracker is none (hooks can be bypassed).
-- D9. Use the official illustration as golden starting-position authority; require square-by-square reviewed transcription (patent corner and pawn listings conflict).
-- D10. Persist with a versioned, strictly validated JSON snapshot plus a deterministic coordinate/event log; omit variant FEN/PGN v0 (no agreed standard).
-- D11. Resolve underspecified gameplay with source-linked reviewed policy examples and TDD, append decisions before coding each ambiguous case; never fall back silently to chess.js defaults (multiplayer semantics differ).
-- D12. Keep toolkit and CI on the same pinned image and prove the CI runner can execute it; a failing runner is an infrastructure blocker, not permission to weaken the gate (reproducibility).
-- D13. Keep the package identity provisional and avoid copying chess.js implementation; public release needs a separate license/name decision (no implicit redistribution or brand rights).
-- D14. Swap `src/` to a TypeScript library with tests, not the hello-world app (only the product element transfers).
-- D15. Delete `docs/oas/` and replace its drift discipline with a JSON schema and package contract tests (no HTTP API).
-- D16. Keep the active/archive spec lifecycle and append-only citable decisions, bootstrapped here (review is the approval record).
-- D17. Swap `toolkit/` to Node/TypeScript tools in disposable Podman containers (one reproducible toolchain).
-- D18. Replace live-stack integration with built-package ESM/CJS/browser consumer tests (the integration boundary is the library package).
-- D19. Keep/adapt make-backed fast hooks, full push gate, changelog checks and conditional vulnerability audit, with CI as authority (fast feedback plus a trusted backstop).
-- D20. Delete `container/` and service stack entirely (nothing is deployed).
-- D21. Defer the agent sandbox, proxy and redeploy broker; preserve least-privilege constraints if introduced later (no service or runtime socket needed).
-- D22. Replace `.claude/` template specifics with portable `AGENTS.md` and minimal optional adapters; preserve the no-agent-git-writes policy (tool independence).
-- D23. Permit `ktb` only as quoted template provenance inside this spec; no active source, tooling or product documentation retains the name (the teardown must be auditable without hiding historical context).
+Before describing the engine as complete: prove the opening fixture, movement, pawn
+directions, assimilation, frozen kings, mate batches, passes/draws and the unresolved
+edge against executable fixtures; ship the committed-action API, history/undo,
+snapshots/replay and a full-match test; pass local and CI toolkit gates, built-package
+ESM/CJS/browser consumers and schema-drift checks from a fresh supported checkout. Do
+not archive spec 001 until these checks and the stated API contract hold. Publishing the
+**repository** and claiming a **complete game engine** are separate decisions; the open
+rule edge must not acquire an invented game outcome.
 
 ## Tracker
 
-none. This is the new repository's first adoption and implementation spec. Sources: official play page and quick-rules PDF, patent for conflicting supporting evidence, chess.js public repository for API inspiration, and reference template setup/spec conventions. No external ticket or prerequisite implementation spec exists.
+none

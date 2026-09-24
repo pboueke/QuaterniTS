@@ -1,0 +1,11 @@
+node_modules/
+coverage/
+.toolkit/
+# Generated / vendored
+dist/
+package-lock.json
+
+# Approval artifacts: specs and their append-only decision records are kept
+# byte-stable so review and decision history are not rewritten by tooling.
+docs/spec/active/
+docs/spec/archive/

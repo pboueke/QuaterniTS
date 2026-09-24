@@ -1,0 +1,48 @@
+# Toolkit mechanics for QuaterniTS. Included by the root Makefile.
+#
+# Requires only: podman (rootless), make, bash, git. The toolkit image is a
+# disposable, stateless test tool: the repository is bind-mounted at /work and
+# dependencies are installed from the frozen package-lock.json with `npm ci`.
+# Nothing is baked into the image and no host Node is required.
+
+TOOLKIT_DIR := toolkit
+TOOLKIT_CONTAINERFILE := $(TOOLKIT_DIR)/Containerfile
+TOOLKIT_IMAGE ?= quaternits-toolkit:local
+TOOLKIT_NPM_CACHE ?= quaternits-npm-cache
+# Brand-specific stamps prevent the old image/dependency stamps from silently
+# skipping the first build after the toolkit image and cache rename.
+TOOLKIT_IMAGE_STAMP := .toolkit/quaternits-image.stamp
+TOOLKIT_NPM_CI_STAMP := .toolkit/quaternits-npm-ci.stamp
+
+# Verified digest: the multi-arch manifest-list digest for
+# docker.io/library/node:24-bookworm-slim, resolved during implementation and
+# recorded in toolkit/README.md. Never invent or hand-edit this value.
+TOOLKIT_BASE_DIGEST ?= sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6
+TOOLKIT_BASE_IMAGE ?= docker.io/library/node:24-bookworm-slim@$(TOOLKIT_BASE_DIGEST)
+
+# Run a command in the disposable toolkit with the repo mounted at /work.
+# keep-id maps the host user to container uid/gid 1000 (`node`) so bind mounts
+# stay writable without running as root. Commands must not contain single quotes.
+define toolkit-run
+podman run --rm --userns=keep-id:uid=1000,gid=1000 \
+	-v "$(CURDIR)":/work:Z \
+	-v "$(TOOLKIT_NPM_CACHE)":/home/node/.npm:Z \
+	-w /work \
+	$(TOOLKIT_IMAGE) bash -lc '$(1)'
+endef
+
+.PHONY: toolkit-image
+toolkit-image: $(TOOLKIT_IMAGE_STAMP) ## Build the digest-pinned toolkit image
+
+$(TOOLKIT_IMAGE_STAMP): $(TOOLKIT_CONTAINERFILE)
+	@mkdir -p $(dir $@)
+	podman build -t $(TOOLKIT_IMAGE) -f $(TOOLKIT_CONTAINERFILE) $(TOOLKIT_DIR)
+	@touch $@
+
+$(TOOLKIT_NPM_CI_STAMP): package.json package-lock.json $(TOOLKIT_IMAGE_STAMP)
+	@mkdir -p $(dir $@)
+	$(call toolkit-run,npm ci --no-audit --no-fund)
+	@touch $@
+
+.PHONY: toolkit-deps
+toolkit-deps: $(TOOLKIT_NPM_CI_STAMP) ## Install dependencies from the frozen lockfile

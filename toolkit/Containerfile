@@ -1,0 +1,17 @@
+# Digest-pinned Node 24 base for the disposable QuaterniTS toolkit image.
+#
+# The digest is the multi-arch manifest-list digest for
+# docker.io/library/node:24-bookworm-slim, resolved during implementation and
+# recorded in toolkit/README.md. Pinning the manifest list (not a single-arch
+# image) keeps the same toolchain on amd64 and arm64 CI runners.
+FROM docker.io/library/node:24-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6
+
+# The image is stateless: no source, lockfile or dependencies are baked in.
+# The repository is bind-mounted at /work and `npm ci` installs from the frozen
+# lockfile at run time.
+
+# Run as the unprivileged `node` user (uid/gid 1000). With
+# `--userns=keep-id:uid=1000,gid=1000` the host user is mapped to this uid, so
+# bind-mounted files stay writable without running the container as root.
+USER node
+WORKDIR /work
