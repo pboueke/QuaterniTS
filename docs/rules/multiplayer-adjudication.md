@@ -8,7 +8,11 @@ witness supports a **fail-closed software policy**, not an official game
 outcome: `001/D41` distinguishes ordinary `001/D38` illegal moves from
 `UnresolvedAdjudicationError` and limits the successor guard to a **checked**
 next active controller. The complete-engine claim remains withheld; this
-limitation does not bar publishing the repository.
+limitation does not bar publishing the repository. **001/D44 approval
+(appended):** the owner approved this fail-closed handling and authorized the
+bounded, guarded implementation test-first; the official game rule for the edge
+stays `[open]`, `UnresolvedAdjudicationError` is a software error rather than a
+game outcome, and no complete game-rule coverage is claimed.
 
 Every fixture below is a **constructed minimal position**, not a position pictured
 by the official sources. Coordinates are chosen to isolate one rule; where the
@@ -373,6 +377,13 @@ Action: White plays `d4×d6` (rook), capturing the frozen Black pawn; the path
 > `|Tier0| > 0`/empty-public state), and the guard fires only for a **checked**
 > next active controller; the general assembled commit path remains
 > withheld (see the 001/D39, 001/D40 and 001/D41 bullets below and §8).
+> **001/D44 approval (appended):** the owner approved the `001/D38`–`001/D41`
+> fail-closed handling and superseded the review-condition hold and the no-code
+> clause **only** for the bounded, guarded implementation, so that guarded path
+> may now be proposed and coded test-first; the official game rule stays
+> `[open]`, `UnresolvedAdjudicationError` is a software error and never a game
+> outcome, and no complete game-rule or complete-engine coverage is claimed (see
+> §8).
 
 - `[policy]` After a committed action, adjudicate mates as a deterministic
   **fixed-point batch**:
@@ -945,6 +956,11 @@ Action: White has no legal move and is not in check.
   response), restoring the pending votes and leaving the turn unchanged; undoing
   a whole proposal therefore needs one undo per recorded event.
 - `[policy]` Frozen and eliminated players do not vote.
+- `[policy]` **001/D45 (appended):** a pending offer expires on the next move/pass or
+  when a participant is frozen, folded into that one history event so a single `undo()`
+  restores the offer; a response against a non-pending offer is a stale vote rejected
+  atomically. Fixture 6's undo semantics are unchanged. See
+  [`administrative-actions.md`](administrative-actions.md) §1.
 
 ### Fixture 6 (constructed `[fixture]`)
 
@@ -990,6 +1006,12 @@ Action C (undo): White proposes; Red accepts; then one `undo()`.
   players never win.
 - `[policy]` The frozen kings remain on the board and remain checkmateable per
   §3; their presence does not delay or prevent the win.
+- `[policy]` **001/D45 (appended):** `resign`/`recordTimeLoss`/`recordWalkover` may
+  freeze any active target with no phantom mate/assimilation batch, advancing the turn
+  clockwise for an on-turn target, preserving it for an off-turn target and awarding a
+  remaining lone active controller; an already-inactive target or a terminal game is
+  rejected atomically. Fixture 7b's post-terminal rejection is unchanged. See
+  [`administrative-actions.md`](administrative-actions.md) §2.
 
 ### Fixture 7 (constructed `[fixture]`)
 
@@ -1046,7 +1068,10 @@ The final wording of `001/D41` was not independently re-reviewed. The official
 game outcome for the checked-non-actor edge remains open; the selected
 software behaviour is fail-closed, not a game outcome or an engine-completeness
 claim. Fixture evidence and current decisions, rather than old review rounds,
-are the implementation contract.
+are the implementation contract. **001/D44 (appended):** the owner approved this
+fail-closed handling and authorized the bounded, guarded implementation
+test-first, superseding the earlier review-condition and no-code holds for that
+guarded path only; the official game rule stays `[open]`.
 
 `[official]` (stated or summarized by the sources above, or fixed by the spec and
 001/D25/001/D26): the assimilation and indirect-mate award rule (§2); frozen pieces exert
@@ -1073,8 +1098,10 @@ with no P0/P1), including the self-mate/self-removal clause and the
 Tier0-internal-vs-public-committed move-set separation (§4, 001/D38; the 001/D41 error
 taxonomy); the operational
 fail-closed guard for the checked-non-actor edge as corrected by 001/D40 and 001/D41 (§4,
-001/D39/001/D40/001/D41; the official GAME RULE for that state stays `[open]`, the guard's
-review condition is not yet met, and no conditional path is authorized).
+001/D39/001/D40/001/D41; the official GAME RULE for that state stays `[open]`; 001/D44
+records the owner's approval and authorizes the bounded, guarded path test-first,
+superseding the earlier review-condition hold and no-code clause for that guarded
+implementation only).
 
 `[open]` (official game rule unknown, not `[official]`; the software behaviour is
 selected as `[policy]` by 001/D39 as corrected by 001/D40 and 001/D41): the checked non-actor
@@ -1086,9 +1113,11 @@ well-founded, so no advertised **GAME OUTCOME** may depend on this edge and the
 claim that the engine is a complete rules library is withheld; an implementation
 that encounters it must fail closed atomically with a named
 unresolved-adjudication error (`UnresolvedAdjudicationError`), never a draw,
-pass, self-award or approximation. A conditional detect-and-error path is
-permitted only once the 001/D39/001/D40 review condition is met, and it never justifies
-the complete-engine claim. The narrow actor-safety policy and Fixture 4d were
+pass, self-award or approximation. A conditional detect-and-error path was
+permitted only once the 001/D39/001/D40 review condition was met; 001/D44 records the
+owner's approval of the fail-closed handling, so that bounded guarded path may now be
+coded test-first, but it never justifies the complete-engine claim and the game rule
+stays `[open]`. The narrow actor-safety policy and Fixture 4d were
 independently accepted with no P0/P1. At 001/D38 this edge was classified `[blocked]`
 and **not** approved; 001/D39 appended a local fail-closed operational guard, and 001/D40
 corrects that guard's precedence, makes it explicitly nonrecursive, extends the
@@ -1146,11 +1175,12 @@ assembled commit path and the complete-engine claim remain withheld.
    exact condition stays open under 001/D27. 001/D39 supersedes only 001/D38's outdated
    no-witness sentence and, conditionally, its coding hold, and 001/D40 records that
    this review condition is **not yet met** (the MiMo review was stopped and is
-   not an approval; the DeepSeek review returned P1s), so no conditional path may
-   be proposed test-first yet and the general assembled commit path and public-API
-   completeness may not be claimed. Red tests for this guard are error-only: they
-   assert the `UnresolvedAdjudicationError` and no state change, never a game
-   outcome on this `[open]` case.
+   not an approval; the DeepSeek review returned P1s). 001/D44 records the
+   owner's approval of this fail-closed handling, so the bounded guarded path may
+   now be proposed test-first, while the general assembled commit path and
+   public-API completeness still may not be claimed. Red tests for this guard are
+   error-only: they assert the `UnresolvedAdjudicationError` and no state change,
+   never a game outcome on this `[open]` case.
 
 The two earlier gaps are now resolved as delegated `[policy]`: zero-active
 terminal state (001/D35, §7 fixture 7b) and frozen-piece capturability (001/D34, §3

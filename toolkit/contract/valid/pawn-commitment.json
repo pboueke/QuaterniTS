@@ -1,0 +1,163 @@
+{
+  "version": 1,
+  "initial": {
+    "pieces": [
+      {
+        "square": "a1",
+        "army": "white",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "a12",
+        "army": "red",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "d4",
+        "army": "white",
+        "type": "pawn",
+        "state": {
+          "kind": "advanced",
+          "vertical": "up",
+          "horizontal": "right",
+          "committed": null
+        }
+      },
+      {
+        "square": "e3",
+        "army": "green",
+        "type": "knight",
+        "state": null
+      },
+      {
+        "square": "l1",
+        "army": "green",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "l12",
+        "army": "black",
+        "type": "king",
+        "state": null
+      }
+    ],
+    "controllers": {
+      "white": "white",
+      "red": "red",
+      "black": "black",
+      "green": "green"
+    },
+    "players": {
+      "white": "active",
+      "red": "active",
+      "black": "active",
+      "green": "active"
+    },
+    "turn": "white"
+  },
+  "actions": [
+    {
+      "kind": "move",
+      "from": "d4",
+      "to": "e3",
+      "promotion": null
+    }
+  ],
+  "log": [
+    {
+      "kind": "move",
+      "from": "d4",
+      "to": "e3",
+      "army": "white",
+      "controller": "white",
+      "promotes": false,
+      "promotion": null,
+      "captured": {
+        "army": "green",
+        "type": "knight",
+        "state": null
+      },
+      "pawn": {
+        "before": {
+          "kind": "advanced",
+          "vertical": "up",
+          "horizontal": "right",
+          "committed": null
+        },
+        "after": {
+          "kind": "advanced",
+          "vertical": "up",
+          "horizontal": "right",
+          "committed": "right"
+        }
+      },
+      "awards": [],
+      "selection": {
+        "kind": "next",
+        "player": "red"
+      }
+    }
+  ],
+  "state": {
+    "position": {
+      "pieces": [
+        {
+          "square": "a1",
+          "army": "white",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "a12",
+          "army": "red",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "e3",
+          "army": "white",
+          "type": "pawn",
+          "state": {
+            "kind": "advanced",
+            "vertical": "up",
+            "horizontal": "right",
+            "committed": "right"
+          }
+        },
+        {
+          "square": "l1",
+          "army": "green",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "l12",
+          "army": "black",
+          "type": "king",
+          "state": null
+        }
+      ],
+      "controllers": {
+        "white": "white",
+        "red": "red",
+        "black": "black",
+        "green": "green"
+      },
+      "players": {
+        "white": "active",
+        "red": "active",
+        "black": "active",
+        "green": "active"
+      },
+      "turn": "red"
+    },
+    "pendingDraw": null,
+    "drawAgreed": false,
+    "outcome": {
+      "kind": "in-progress"
+    }
+  }
+}

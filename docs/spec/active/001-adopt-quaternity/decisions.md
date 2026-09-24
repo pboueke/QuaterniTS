@@ -122,6 +122,39 @@ decision as `001/D<n>`; add future decisions without renumbering existing IDs.
   successor in `001/D39` is internal, not a successful public commit. Tests for the open
   case assert only error and atomicity, not a game outcome. No general committed-action
   or complete-engine claim is authorized by this software policy.
+- **001/D44** — The owner **approves the provisional fail-closed handling** of
+  `001/D38`–`001/D41` and authorizes resuming spec implementation, superseding the
+  `001/D39` review-condition prerequisite and the `001/D41` no-code clause **only** for the
+  bounded, guarded implementation. The `001/D38` actor-safety filter and the
+  `001/D39`–`001/D41` fail-closed guard (checked-successor rejection; on-turn nonempty
+  internal / empty public state; `pass()` and every other turn-advancing action; own
+  next-active-controller load/query scope) may be proposed and coded **test-first** under
+  `001/D11`. A software error is not a game outcome: `UnresolvedAdjudicationError` stays
+  reserved for those two unresolved states and the **official game rule for the edge
+  stays `[open]`** — no mate, pass, draw, elimination or award is decided. The validated
+  expected-outcome witness remains P/Q in
+  [`d38-coordinate-search.md`](../../../rules/d38-coordinate-search.md) §2–§3, with
+  Fixture 4d in
+  [`multiplayer-adjudication.md`](../../../rules/multiplayer-adjudication.md) §4. The
+  edge stays prominently documented and **no complete game-rule or complete-engine
+  coverage is claimed**; only this bounded, guarded path is authorized, and public-API
+  completeness and the complete-engine claim remain withheld.
+- **001/D45** — **Draw-offer expiry and administrative freeze sequencing** (owner
+  approved in interview). A pending draw offer (proposal plus any recorded responses)
+  expires on the next move or pass, or when a participant is frozen; the expiry is part
+  of that **one** history event, so a single `undo()` reverses the action and restores
+  the pending offer with its recorded votes, and a response against a no-longer-pending
+  offer is a **stale vote** rejected atomically. `resign`, `recordTimeLoss` and
+  `recordWalkover` may freeze **any** active target, apply **no** phantom
+  mate/assimilation batch, leave the frozen kings on the board, advance the turn
+  clockwise when the target was on turn and preserve the turn otherwise, and award the
+  win to a remaining lone active controller; an already-inactive target or any action in
+  a terminal game is rejected atomically. The proposal/consent and post-terminal rules it
+  builds on are `[official]`
+  ([`multiplayer-adjudication.md`](../../../rules/multiplayer-adjudication.md) §6 Fixture
+  6 and §7 Fixture 7b); the expiry, undo-coupling, stale-vote, freeze-target and
+  turn-sequencing clauses are `[policy]` software inference. Source-linked
+  expected-outcome fixtures: [`administrative-actions.md`](../../../rules/administrative-actions.md).
 
 ## Identity and release preparation
 

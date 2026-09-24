@@ -8,8 +8,26 @@
   "engines": {
     "node": ">=24"
   },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    },
+    "./schema/quaternits-snapshot-v1.schema.json": "./schema/quaternits-snapshot-v1.schema.json",
+    "./package.json": "./package.json"
+  },
   "files": [
-    "src"
+    "dist",
+    "schema"
   ],
   "scripts": {
     "fmt-check": "prettier --check .",
@@ -19,12 +37,22 @@
     "test": "node --test --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-include='src/**/*.ts' --test-coverage-include='toolkit/**/*.ts' \"src/**/*.test.ts\" \"toolkit/**/*.test.ts\"",
     "audit": "node toolkit/scripts/audit.ts",
     "version-check": "node toolkit/scripts/version.ts --check",
-    "version-sync": "node toolkit/scripts/version.ts --sync"
+    "version-sync": "node toolkit/scripts/version.ts --sync",
+    "build:clean": "rm -rf dist",
+    "build:esm": "tsc -p tsconfig.build.esm.json",
+    "build:cjs": "tsc -p tsconfig.build.cjs.json",
+    "build": "npm run build:clean && npm run build:esm && npm run build:cjs && node toolkit/scripts/finalize-build.mjs",
+    "consumer-test": "bash toolkit/scripts/consumer-test.sh",
+    "integration": "bash toolkit/scripts/consumer-test.sh --integration",
+    "browser-consumer": "bash toolkit/scripts/consumer-test.sh --browser",
+    "contract-check": "node toolkit/scripts/contract-check.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@types/node": "24.10.1",
+    "ajv": "8.20.0",
     "eslint": "10.11.0",
+    "playwright-core": "1.63.0",
     "prettier": "3.9.9",
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.1"

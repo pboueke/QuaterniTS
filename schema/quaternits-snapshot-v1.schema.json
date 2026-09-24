@@ -1,0 +1,397 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:quaternits:schema:snapshot:v1",
+  "title": "QuaterniTS V1 game snapshot",
+  "description": "The strict shape of the version 1 JSON snapshot of a Quaternity game (spec 001/D10/D15): the replay origin position, the coordinate action log, the canonical event records and the resulting state. Every object rejects unknown keys and every optional value is an explicit null. Shape acceptance is necessary but not sufficient: Quaternity.loadSnapshot replays the actions and rejects a document whose serialized state, awards, captures, promotion choices, votes or outcome disagree with the replay. Load a document with Quaternity.loadSnapshot, never by trusting its state field.",
+  "type": "object",
+  "required": ["version", "initial", "actions", "log", "state"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "initial": { "$ref": "#/$defs/position" },
+    "actions": {
+      "description": "The coordinate replay input, in order. The loader replays exactly these actions through the public API.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/action" }
+    },
+    "log": {
+      "description": "The canonical event records, including every mate award, captured piece, pawn transition, promotion choice and turn selection. Each record must equal the record the replayed action produces.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/event" }
+    },
+    "state": { "$ref": "#/$defs/state" }
+  },
+  "$defs": {
+    "army": {
+      "description": "One army colour; the player identity after assimilation.",
+      "enum": ["white", "red", "black", "green"]
+    },
+    "status": {
+      "description": "One player's lifecycle status.",
+      "enum": ["active", "frozen", "eliminated"]
+    },
+    "square": {
+      "description": "One on-board coordinate: file a-l and rank 1-12.",
+      "type": "string",
+      "pattern": "^[a-l]([1-9]|1[0-2])$"
+    },
+    "pieceType": {
+      "enum": ["king", "queen", "rook", "knight", "bishop", "pawn"]
+    },
+    "pawnDirection": {
+      "enum": ["up", "down", "left", "right"]
+    },
+    "promotion": {
+      "description": "A permitted same-army promotion choice; never a king or a pawn (001/D28).",
+      "enum": ["queen", "rook", "bishop", "knight"]
+    },
+    "pawnState": {
+      "description": "A pawn's movement state: an ordinary pawn's direction, or an advanced central pawn's two axes and its commitment (001/D28/001/D29).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "direction"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "ordinary" },
+            "direction": { "$ref": "#/$defs/pawnDirection" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "vertical", "horizontal", "committed"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "advanced" },
+            "vertical": { "$ref": "#/$defs/pawnDirection" },
+            "horizontal": { "$ref": "#/$defs/pawnDirection" },
+            "committed": {
+              "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/pawnDirection" }]
+            }
+          }
+        }
+      ]
+    },
+    "piece": {
+      "description": "One placed piece: its square, retained army colour, type and pawn state. state is a pawn state for a pawn and null for every other type.",
+      "type": "object",
+      "required": ["square", "army", "type", "state"],
+      "additionalProperties": false,
+      "properties": {
+        "square": { "$ref": "#/$defs/square" },
+        "army": { "$ref": "#/$defs/army" },
+        "type": { "$ref": "#/$defs/pieceType" },
+        "state": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/pawnState" }]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["type"],
+            "properties": { "type": { "const": "pawn" } }
+          },
+          "then": {
+            "properties": { "state": { "$ref": "#/$defs/pawnState" } }
+          },
+          "else": { "properties": { "state": { "type": "null" } } }
+        }
+      ]
+    },
+    "placedPiece": {
+      "description": "A piece without its square, as a captured piece is recorded. state is a pawn state for a pawn and null for every other type.",
+      "type": "object",
+      "required": ["army", "type", "state"],
+      "additionalProperties": false,
+      "properties": {
+        "army": { "$ref": "#/$defs/army" },
+        "type": { "$ref": "#/$defs/pieceType" },
+        "state": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/pawnState" }]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["type"],
+            "properties": { "type": { "const": "pawn" } }
+          },
+          "then": {
+            "properties": { "state": { "$ref": "#/$defs/pawnState" } }
+          },
+          "else": { "properties": { "state": { "type": "null" } } }
+        }
+      ]
+    },
+    "pawnTransition": {
+      "description": "A pawn's state before and after one move.",
+      "type": "object",
+      "required": ["before", "after"],
+      "additionalProperties": false,
+      "properties": {
+        "before": { "$ref": "#/$defs/pawnState" },
+        "after": { "$ref": "#/$defs/pawnState" }
+      }
+    },
+    "position": {
+      "description": "A validated position: its pieces, the army-to-controller mapping, every player's status and the turn.",
+      "type": "object",
+      "required": ["pieces", "controllers", "players", "turn"],
+      "additionalProperties": false,
+      "properties": {
+        "pieces": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/piece" }
+        },
+        "controllers": {
+          "type": "object",
+          "required": ["white", "red", "black", "green"],
+          "additionalProperties": false,
+          "properties": {
+            "white": { "$ref": "#/$defs/army" },
+            "red": { "$ref": "#/$defs/army" },
+            "black": { "$ref": "#/$defs/army" },
+            "green": { "$ref": "#/$defs/army" }
+          }
+        },
+        "players": {
+          "type": "object",
+          "required": ["white", "red", "black", "green"],
+          "additionalProperties": false,
+          "properties": {
+            "white": { "$ref": "#/$defs/status" },
+            "red": { "$ref": "#/$defs/status" },
+            "black": { "$ref": "#/$defs/status" },
+            "green": { "$ref": "#/$defs/status" }
+          }
+        },
+        "turn": { "$ref": "#/$defs/army" }
+      }
+    },
+    "award": {
+      "description": "One mate award: the removed king's id and army, credited to the actor (001/D30/001/D32).",
+      "type": "object",
+      "required": ["kingId", "army", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "kingId": { "type": "string", "minLength": 1 },
+        "army": { "$ref": "#/$defs/army" },
+        "to": { "$ref": "#/$defs/army" }
+      }
+    },
+    "selection": {
+      "description": "The next active controller, or the lone active winner (001/D35).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "player"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "next" },
+            "player": { "$ref": "#/$defs/army" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "winner"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "winner" },
+            "winner": { "$ref": "#/$defs/army" }
+          }
+        }
+      ]
+    },
+    "outcome": {
+      "description": "The current result: the three rules-authorized results only. The checked-non-actor edge is a load error, never an outcome (001/D38-001/D41, 001/D44).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "in-progress" } }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "winner"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "winner" },
+            "winner": { "$ref": "#/$defs/army" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "draw" } }
+        }
+      ]
+    },
+    "pendingDraw": {
+      "description": "The pending draw offer and the acceptances recorded so far (docs/rules/administrative-actions.md, 001/D45).",
+      "type": "object",
+      "required": ["proposer", "acceptedBy"],
+      "additionalProperties": false,
+      "properties": {
+        "proposer": { "$ref": "#/$defs/army" },
+        "acceptedBy": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/army" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "state": {
+      "description": "The serialized result, cross-checked against the replay: the replayed position, pending offer, agreed draw and derived outcome must all equal these values. The loader never adopts them on trust.",
+      "type": "object",
+      "required": ["position", "pendingDraw", "drawAgreed", "outcome"],
+      "additionalProperties": false,
+      "properties": {
+        "position": { "$ref": "#/$defs/position" },
+        "pendingDraw": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/pendingDraw" }]
+        },
+        "drawAgreed": { "type": "boolean" },
+        "outcome": { "$ref": "#/$defs/outcome" }
+      }
+    },
+    "action": {
+      "description": "One coordinate replay action. A move states its explicit promotion choice or null, so a promoting move is never left unqualified (001/D28).",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "from", "to", "promotion"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "move" },
+            "from": { "$ref": "#/$defs/square" },
+            "to": { "$ref": "#/$defs/square" },
+            "promotion": {
+              "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/promotion" }]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "pass" } }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "draw-proposal" } }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "player", "accept"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "draw-response" },
+            "player": { "$ref": "#/$defs/army" },
+            "accept": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "action", "player"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "freeze" },
+            "action": { "enum": ["resign", "time-loss", "walkover"] },
+            "player": { "$ref": "#/$defs/army" }
+          }
+        }
+      ]
+    },
+    "event": {
+      "description": "One canonical event record. A move record carries its awards, its captured piece, its pawn transition, its explicit promotion choice and its turn selection.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "from",
+            "to",
+            "army",
+            "controller",
+            "promotes",
+            "promotion",
+            "captured",
+            "pawn",
+            "awards",
+            "selection"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "move" },
+            "from": { "$ref": "#/$defs/square" },
+            "to": { "$ref": "#/$defs/square" },
+            "army": { "$ref": "#/$defs/army" },
+            "controller": { "$ref": "#/$defs/army" },
+            "promotes": { "type": "boolean" },
+            "promotion": {
+              "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/promotion" }]
+            },
+            "captured": {
+              "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/placedPiece" }]
+            },
+            "pawn": {
+              "oneOf": [
+                { "type": "null" },
+                { "$ref": "#/$defs/pawnTransition" }
+              ]
+            },
+            "awards": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/award" }
+            },
+            "selection": { "$ref": "#/$defs/selection" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "player", "selection"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "pass" },
+            "player": { "$ref": "#/$defs/army" },
+            "selection": { "$ref": "#/$defs/selection" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "proposer"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "draw-proposal" },
+            "proposer": { "$ref": "#/$defs/army" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "player", "accept"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "draw-response" },
+            "player": { "$ref": "#/$defs/army" },
+            "accept": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "action", "player", "selection"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "freeze" },
+            "action": { "enum": ["resign", "time-loss", "walkover"] },
+            "player": { "$ref": "#/$defs/army" },
+            "selection": { "$ref": "#/$defs/selection" }
+          }
+        }
+      ]
+    }
+  }
+}

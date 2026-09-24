@@ -5,7 +5,8 @@ decision.** This document records a read-only coordinate search for the
 `[blocked]` edge in `docs/rules/multiplayer-adjudication.md` §4/§8 (001/D38 checked
 non-actor with a Tier0 defence but zero 001/D38-safe public committed moves). It adds
 no decision of its own; spec **001/D39** now cites this record as the witness behind
-its operational fail-closed guard, but this file remains research and never
+its operational fail-closed guard, which **001/D44** authorizes for bounded, guarded
+implementation, but this file remains research and never
 policy. It contains no source code, no test and no rules policy. An independent
 review **accepted the geometry of the primary witness (§2.1–§2.5) with P2
 reproducibility gaps only**; it did not adjudicate the clause-(a) variant (§2.6)

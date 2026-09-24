@@ -6,6 +6,13 @@
 # stays inside the digest-pinned toolkit image. No Node or npm runs on the
 # runner.
 #
+# `make verify` now includes the real browser consumer leg, so a fresh runner
+# builds `quaternits-browser:local` first, which pulls the ~2.8 GB
+# digest-pinned Playwright base image once (toolkit/Containerfile.browser).
+# That pull is the reason this job is slower than the unit-test-only part of
+# the gate; it is a real check, not a cache, and it is deliberately not
+# skipped or stubbed.
+#
 # UNPROVEN: no GitHub run has been observed yet. This file claims nothing until
 # the owner pushes it and watches a run.
 name: CI

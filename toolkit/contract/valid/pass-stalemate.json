@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "initial": {
+    "pieces": [
+      {
+        "square": "a1",
+        "army": "white",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "a12",
+        "army": "red",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "b5",
+        "army": "black",
+        "type": "rook",
+        "state": null
+      },
+      {
+        "square": "c2",
+        "army": "black",
+        "type": "rook",
+        "state": null
+      },
+      {
+        "square": "l1",
+        "army": "green",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "l12",
+        "army": "black",
+        "type": "king",
+        "state": null
+      }
+    ],
+    "controllers": {
+      "white": "white",
+      "red": "red",
+      "black": "black",
+      "green": "green"
+    },
+    "players": {
+      "white": "active",
+      "red": "active",
+      "black": "active",
+      "green": "active"
+    },
+    "turn": "white"
+  },
+  "actions": [
+    {
+      "kind": "pass"
+    }
+  ],
+  "log": [
+    {
+      "kind": "pass",
+      "player": "white",
+      "selection": {
+        "kind": "next",
+        "player": "red"
+      }
+    }
+  ],
+  "state": {
+    "position": {
+      "pieces": [
+        {
+          "square": "a1",
+          "army": "white",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "a12",
+          "army": "red",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "b5",
+          "army": "black",
+          "type": "rook",
+          "state": null
+        },
+        {
+          "square": "c2",
+          "army": "black",
+          "type": "rook",
+          "state": null
+        },
+        {
+          "square": "l1",
+          "army": "green",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "l12",
+          "army": "black",
+          "type": "king",
+          "state": null
+        }
+      ],
+      "controllers": {
+        "white": "white",
+        "red": "red",
+        "black": "black",
+        "green": "green"
+      },
+      "players": {
+        "white": "active",
+        "red": "active",
+        "black": "active",
+        "green": "active"
+      },
+      "turn": "red"
+    },
+    "pendingDraw": null,
+    "drawAgreed": false,
+    "outcome": {
+      "kind": "in-progress"
+    }
+  }
+}

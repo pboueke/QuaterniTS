@@ -323,6 +323,25 @@ export function createPosition(input: PositionInput): Position {
   return Object.freeze(position);
 }
 
+/**
+ * The {@link createPosition} input that rebuilds `position`: its pieces with
+ * their pawn state, its army-to-controller mapping, its player statuses and its
+ * turn. A caller that did not build a position itself pairs this with
+ * `createPosition` to re-validate it and hold an isolated copy.
+ */
+export function positionInputOf(position: Position): PositionInput {
+  return {
+    pieces: [...position.board.entries()].map(([square, placed]) =>
+      placed.type === "pawn"
+        ? { square, army: placed.army, type: "pawn", state: placed.state }
+        : { square, army: placed.army, type: placed.type },
+    ),
+    controllers: position.controllers,
+    players: position.players,
+    turn: position.turn,
+  };
+}
+
 /** The ordinary forward direction of an army's opening pawn on `square`. */
 function openingOrdinaryDirection(
   army: ArmyColor,
@@ -412,42 +431,67 @@ function attackersOnBoard(
   players: Readonly<Record<ArmyColor, PlayerStatus>>,
   square: Square,
   controller: ArmyColor,
-): Square[] {
+): Attacker[] {
   if (players[controller] !== "active") {
     return [];
   }
-  const squares: Square[] = [];
+  const attacking: Attacker[] = [];
   for (const [from, occupant] of board) {
     if (occupant.controller !== controller) {
       continue;
     }
     if (attacksSquare(board, from, occupant, square)) {
-      squares.push(from);
+      attacking.push({ square: from, army: occupant.army, controller });
     }
   }
-  return squares;
+  return attacking;
 }
 
 /**
- * The squares of every piece controlled by `controller` that attacks `square`,
- * by geometry and occupancy only. Returns `[]` unless `controller` is active:
- * a frozen or eliminated controller's pieces exert no attacks. Frozen pieces of
- * any controller still occupy their squares and block sliding rays.
- *
- * Provisional shape (reviewer P2): this internal result is squares only. The
- * future public `Quaternity` API may return richer attacker records that retain
- * the attacking army's colour, so callers must not depend on the bare array.
+ * One attacking piece, as a query returns it: the square it stands on, its
+ * retained army colour and the controller it attacks for. The army colour and
+ * the controller differ after assimilation (spec 001/D33;
+ * `docs/rules/multiplayer-adjudication.md` §0).
+ */
+export interface Attacker {
+  readonly square: Square;
+  readonly army: ArmyColor;
+  readonly controller: ArmyColor;
+}
+
+/**
+ * Every piece controlled by `controller` that attacks `square`, by geometry and
+ * occupancy only, each carrying its square, retained army colour and
+ * controller. Returns `[]` unless `controller` is active: a frozen or
+ * eliminated controller's pieces exert no attacks. Frozen pieces of any
+ * controller still occupy their squares and block sliding rays.
+ */
+export function attackerRecords(
+  position: Position,
+  square: Square,
+  controller: ArmyColor,
+): Attacker[] {
+  return attackersOnBoard(
+    occupancy(position),
+    position.players,
+    square,
+    controller,
+  );
+}
+
+/**
+ * The squares of every piece controlled by `controller` that attacks `square`.
+ * This internal square-only projection is what mate detection consumes; the
+ * public `Quaternity.attackers` query returns the richer {@link Attacker}
+ * records.
  */
 export function attackers(
   position: Position,
   square: Square,
   controller: ArmyColor,
 ): Square[] {
-  return attackersOnBoard(
-    occupancy(position),
-    position.players,
-    square,
-    controller,
+  return attackerRecords(position, square, controller).map(
+    (attacker) => attacker.square,
   );
 }
 

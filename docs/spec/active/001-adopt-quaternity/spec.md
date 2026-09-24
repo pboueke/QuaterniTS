@@ -7,11 +7,12 @@ chess.js notation, data formats and rules are not compatibility promises. This
 specification describes the intended library and release checks, not features already
 shipped.
 
-The [numbered decisions](decisions.md) (`001/D1`–`001/D43`) are the current decision
+The [numbered decisions](decisions.md) (`001/D1`–`001/D45`) are the current decision
 index. Source-linked examples and detailed rule fixtures live in
 [`docs/fixtures/opening-position.md`](../../../fixtures/opening-position.md),
 [`docs/rules/pawn-vectors.md`](../../../rules/pawn-vectors.md),
-[`docs/rules/multiplayer-adjudication.md`](../../../rules/multiplayer-adjudication.md)
+[`docs/rules/multiplayer-adjudication.md`](../../../rules/multiplayer-adjudication.md),
+[`docs/rules/administrative-actions.md`](../../../rules/administrative-actions.md)
 and [`docs/rules/d38-coordinate-search.md`](../../../rules/d38-coordinate-search.md).
 When these disagree with an older provisional decision, use the later correction and the
 current policy. Cite decisions as `001/D<n>`.
@@ -47,8 +48,10 @@ current policy. Cite decisions as `001/D<n>`.
   `001/D30`–`001/D38`). Frozen non-king pieces remain inert, blocking and capturable. A
   two-active-player stalemate is a draw; with more than two active players an immobile,
   non-mated player may pass. A lone active controller wins. Draw offers require the
-  active turn and unanimous acceptance; administrative actions after game over are
-  rejected.
+  active turn and unanimous acceptance, and a pending offer expires on the next move or
+  pass or when a participant is frozen; `resign`/time loss/walkover may freeze any active
+  target with the `001/D45` turn and undo sequencing; administrative actions after game
+  over are rejected.
 - **Unresolved game edge:** the official outcome for a controller with a nonempty
   internal pre-batch defence set but no safe public committed move remains unknown. The
   decided software policy is fail-closed, not a fabricated mate, pass or draw.
@@ -57,10 +60,13 @@ current policy. Cite decisions as `001/D<n>`.
   an ordinary illegal move. The guard is checked after **every** turn-advancing action
   (including a pass without a phantom batch), only when the next active controller is
   checked. An unchecked successor is not vetoed; its own on-turn unresolved state fails
-  closed. Internal moves must not be advertised as committable. The rule outcome,
-  general assembled commit path and complete-engine claim remain open pending evidence;
-  this is a **rules/completeness limitation**, not a prohibition on making the
-  repository public (`001/D38`–`001/D41`).
+  closed. Internal moves must not be advertised as committable. The owner approved
+  this fail-closed handling and authorized the bounded, guarded implementation to
+  proceed test-first; the **official game rule for the edge stays open** and no
+  complete game-rule coverage is claimed. `UnresolvedAdjudicationError` is a software
+  error, never a game outcome. The complete-engine claim remains withheld; this is a
+  **rules/completeness limitation**, not a prohibition on making the repository public
+  (`001/D38`–`001/D41`, `001/D44`).
 
 An ambiguous gameplay policy needs an official source or clearly labelled inference, a
 reviewed coordinate/algorithmic expected-outcome fixture and a failing test before
@@ -113,7 +119,8 @@ snapshots/replay and a full-match test; pass local and CI toolkit gates, built-p
 ESM/CJS/browser consumers and schema-drift checks from a fresh supported checkout. Do
 not archive spec 001 until these checks and the stated API contract hold. Publishing the
 **repository** and claiming a **complete game engine** are separate decisions; the open
-rule edge must not acquire an invented game outcome.
+rule edge must not acquire an invented game outcome, and only the bounded, guarded path
+is authorized (`001/D44`).
 
 ## Tracker
 

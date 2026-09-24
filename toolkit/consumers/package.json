@@ -1,0 +1,6 @@
+{
+  "name": "quaternits-consumer-smoke",
+  "private": true,
+  "type": "module",
+  "description": "Disposable Node ESM/CJS/TypeScript consumer fixture for the packed quaternits package; copied to a temp directory and executed by toolkit/scripts/consumer-test.sh."
+}

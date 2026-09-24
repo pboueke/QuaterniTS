@@ -1,0 +1,19 @@
+# Project-owned browser image for the real-browser consumer gate.
+#
+# The real Chromium, its system libraries and the Playwright driver come from
+# the official Playwright image, referenced here by its multi-arch
+# manifest-list digest only. Pinning the manifest list (not a single-arch
+# digest) keeps the same browser on amd64 and arm64 CI runners.
+#
+# The derive step exists so the gate runs a project-owned `quaternits-` image
+# tag (001/D43) instead of a vendor tag: this file is the single place that
+# names the vendor image, and `toolkit/Makefile.fragment` pins the tag and
+# `toolkit/README.md` records the digest. Never invent or hand-edit the digest;
+# re-resolve it and update `toolkit/README.md` and `package.json`'s
+# `playwright-core` version together, because the image's Playwright driver and
+# the npm driver must match or Playwright cannot locate the browsers.
+#
+# Nothing is baked in: the repository is bind-mounted at /work and the gate
+# serves the tarball installed by `consumer-test.sh` over loopback with
+# `--network=none`.
+FROM mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27

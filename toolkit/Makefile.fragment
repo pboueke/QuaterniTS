@@ -31,6 +31,28 @@ podman run --rm --userns=keep-id:uid=1000,gid=1000 \
 	$(TOOLKIT_IMAGE) bash -lc '$(1)'
 endef
 
+# The real-browser gate's image: a project-owned tag (`quaternits-`, 001/D43)
+# derived from the digest-pinned official Playwright image that
+# toolkit/Containerfile.browser names. The vendor image ships Chromium and its
+# system libraries but no npm `playwright` package, so the gate installs the
+# exact matching `playwright-core` in the pinned toolkit instead.
+BROWSER_IMAGE ?= quaternits-browser:local
+BROWSER_CONTAINERFILE := $(TOOLKIT_DIR)/Containerfile.browser
+BROWSER_IMAGE_STAMP := .toolkit/quaternits-browser-image.stamp
+
+# Run a command in the pinned browser image with the repo mounted at /work.
+# `--network=none` is deliberate: the gate serves the installed tarball over
+# loopback inside the container, so a browser test can never reach the network
+# or silently depend on a CDN or a remote module shim. keep-id maps the host
+# user to the container's uid/gid 1000 user, so the mounted build stays
+# writable without running as root. Commands must not contain single quotes.
+define browser-run
+podman run --rm --network=none --userns=keep-id:uid=1000,gid=1000 \
+	-v "$(CURDIR)":/work:Z \
+	-w /work \
+	$(BROWSER_IMAGE) bash -lc '$(1)'
+endef
+
 # Host-side preflight: fail loudly when rootless Podman is unusable, so no gate
 # can skip a check or report a fake result. It verifies a usable rootless
 # Podman, not that the pinned image runs; the gate targets that follow actually
@@ -45,6 +67,15 @@ toolkit-image: $(TOOLKIT_IMAGE_STAMP) ## Build the digest-pinned toolkit image
 $(TOOLKIT_IMAGE_STAMP): $(TOOLKIT_CONTAINERFILE)
 	@mkdir -p $(dir $@)
 	podman build -t $(TOOLKIT_IMAGE) -f $(TOOLKIT_CONTAINERFILE) $(TOOLKIT_DIR)
+	@touch $@
+
+.PHONY: browser-image
+browser-image: $(BROWSER_IMAGE_STAMP) ## Build the pinned browser image (large: pulls the Playwright base once)
+
+$(BROWSER_IMAGE_STAMP): $(BROWSER_CONTAINERFILE)
+	@mkdir -p $(dir $@)
+	podman build --pull=missing -t $(BROWSER_IMAGE) \
+		-f $(BROWSER_CONTAINERFILE) $(TOOLKIT_DIR)
 	@touch $@
 
 $(TOOLKIT_NPM_CI_STAMP): package.json package-lock.json $(TOOLKIT_IMAGE_STAMP)

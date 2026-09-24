@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "initial": {
+    "pieces": [
+      {
+        "square": "a1",
+        "army": "white",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "a12",
+        "army": "red",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "l1",
+        "army": "green",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "l12",
+        "army": "black",
+        "type": "king",
+        "state": null
+      }
+    ],
+    "controllers": {
+      "white": "white",
+      "red": "red",
+      "black": "black",
+      "green": "green"
+    },
+    "players": {
+      "white": "active",
+      "red": "active",
+      "black": "active",
+      "green": "active"
+    },
+    "turn": "white"
+  },
+  "actions": [
+    {
+      "kind": "draw-proposal"
+    },
+    {
+      "kind": "draw-response",
+      "player": "black",
+      "accept": true
+    }
+  ],
+  "log": [
+    {
+      "kind": "draw-proposal",
+      "proposer": "white"
+    },
+    {
+      "kind": "draw-response",
+      "player": "black",
+      "accept": true
+    }
+  ],
+  "state": {
+    "position": {
+      "pieces": [
+        {
+          "square": "a1",
+          "army": "white",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "a12",
+          "army": "red",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "l1",
+          "army": "green",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "l12",
+          "army": "black",
+          "type": "king",
+          "state": null
+        }
+      ],
+      "controllers": {
+        "white": "white",
+        "red": "red",
+        "black": "black",
+        "green": "green"
+      },
+      "players": {
+        "white": "active",
+        "red": "active",
+        "black": "active",
+        "green": "active"
+      },
+      "turn": "white"
+    },
+    "pendingDraw": {
+      "proposer": "white",
+      "acceptedBy": ["black", "black"]
+    },
+    "drawAgreed": false,
+    "outcome": {
+      "kind": "in-progress"
+    }
+  }
+}

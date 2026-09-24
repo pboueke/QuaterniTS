@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "initial": {
+    "pieces": [
+      {
+        "square": "a1",
+        "army": "white",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "a12",
+        "army": "red",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "l1",
+        "army": "green",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "l12",
+        "army": "black",
+        "type": "king",
+        "state": null
+      }
+    ],
+    "controllers": {
+      "white": "white",
+      "red": "red",
+      "black": "black",
+      "green": "green"
+    },
+    "players": {
+      "white": "active",
+      "red": "active",
+      "black": "active",
+      "green": "active"
+    },
+    "turn": "white"
+  },
+  "actions": [
+    {
+      "kind": "freeze",
+      "action": "resign",
+      "player": "red"
+    },
+    {
+      "kind": "freeze",
+      "action": "walkover",
+      "player": "black"
+    },
+    {
+      "kind": "freeze",
+      "action": "time-loss",
+      "player": "green"
+    }
+  ],
+  "log": [
+    {
+      "kind": "freeze",
+      "action": "resign",
+      "player": "red",
+      "selection": {
+        "kind": "next",
+        "player": "white"
+      }
+    },
+    {
+      "kind": "freeze",
+      "action": "walkover",
+      "player": "black",
+      "selection": {
+        "kind": "next",
+        "player": "white"
+      }
+    },
+    {
+      "kind": "freeze",
+      "action": "time-loss",
+      "player": "green",
+      "selection": {
+        "kind": "winner",
+        "winner": "white"
+      }
+    }
+  ],
+  "state": {
+    "position": {
+      "pieces": [
+        {
+          "square": "a1",
+          "army": "white",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "a12",
+          "army": "red",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "l1",
+          "army": "green",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "l12",
+          "army": "black",
+          "type": "king",
+          "state": null
+        }
+      ],
+      "controllers": {
+        "white": "white",
+        "red": "red",
+        "black": "black",
+        "green": "green"
+      },
+      "players": {
+        "white": "active",
+        "red": "frozen",
+        "black": "frozen",
+        "green": "frozen"
+      },
+      "turn": "white"
+    },
+    "pendingDraw": null,
+    "drawAgreed": false,
+    "outcome": {
+      "kind": "winner",
+      "winner": "white"
+    }
+  }
+}

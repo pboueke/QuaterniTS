@@ -9,4 +9,16 @@ export default tseslint.config(
   },
   js.configs.recommended,
   tseslint.configs.recommended,
+  // The consumer fixtures are samples of how a consumer loads the package, so
+  // the CommonJS fixture calls `require` on purpose. Declare the CommonJS
+  // vocabulary for exactly that directory instead of loosening a rule
+  // repository-wide.
+  {
+    files: ["toolkit/consumers/**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: { require: "readonly", __dirname: "readonly" },
+    },
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
 );

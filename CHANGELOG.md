@@ -18,6 +18,51 @@
   `src/turn.ts`, advancing clockwise from White over the frozen/eliminated
   players and rejecting the zero-active state instead of fabricating a draw
   (spec 001/D35; `docs/rules/multiplayer-adjudication.md` §7 Fixture 7/7b).
+- feat: add the guarded internal committed-move seam in `src/committedMove.ts` —
+  the public committable set, an atomic commit, the board-less pass and the
+  administrative freeze, with the
+  001/D38 actor-safety filter and the fail-closed 001/D39–001/D41
+  checked-successor guard (spec 001/D38–001/D41 as approved by 001/D44;
+  `docs/rules/multiplayer-adjudication.md` §4–§5).
+- feat: reject an already-unresolved position at load — the `Quaternity`
+  constructor now applies the 001/D40(3) on-turn bound, so a position whose
+  on-turn controller has internal moves but no public committable move throws
+  `UnresolvedAdjudicationError` instead of being adopted, while a terminal
+  position stays loadable and gains no invented outcome (spec 001/D40, 001/D41,
+  001/D44). An unresolved state _reached_ through play still fails closed on
+  every query.
+- feat: add the administrative actions to `Quaternity` (spec 001/D45;
+  `docs/rules/administrative-actions.md` §1–§2) — `proposeDraw()` by the
+  on-turn player, `respondToDraw(player, accept)` by each other active player
+  once, the read-only `pendingDraw()` snapshot, and `resign`,
+  `recordTimeLoss` and `recordWalkover`, which may freeze any active target with
+  no phantom mate/assimilation batch. A proposal and its votes change no turn; a
+  pending offer expires inside the single move, pass or freeze event that ends it
+  (so one `undo()` restores it with its recorded votes); a response against a
+  non-pending offer is a stale vote rejected atomically; an on-turn freeze
+  advances the turn clockwise, an off-turn freeze preserves it, and a remaining
+  lone active controller wins. Every rejection — an already-inactive target, a
+  terminal game, or a turn-advancing freeze vetoed by the existing
+  001/D39–001/D41 guard — is atomic.
+- feat: record draw offers/responses and freezes as typed frozen history events
+  (`DrawProposalEvent`, `DrawResponseEvent`, `FreezeEvent`) and treat an agreed
+  draw as terminal for board and administrative actions, while `undo()` and
+  `reset()` still work.
+- feat: add the bounded public `Quaternity` class in `src/quaternity.ts` and its
+  `src/index.ts` entry point — opening or custom position, committable moves,
+  commit/pass, history/undo/reset and only the rules-authorized results
+  (spec 001/D25, 001/D35, 001/D45). The `[open]` checked-non-actor edge fails
+  closed with `UnresolvedAdjudicationError` rather than an invented outcome
+  (001/D44).
+- feat: add the public attack/check queries `attackers(square, controller)`,
+  `isAttacked(square, controller)` and `inCheck(player)` to `Quaternity`.
+  Attacker records keep each attacking piece's square, retained army colour and
+  controller, so an assimilated piece attacks for its controller while its army
+  colour stays (spec 001/D33); a frozen controller's pieces exert no attacks but
+  still block sliding rays (001/D26/001/D34). `inCheck` evaluates every king a
+  controller owns (001/D31), and all three queries reject an unknown square or
+  controller instead of answering an implicit no-attack
+  (`docs/rules/multiplayer-adjudication.md` §0/§1/§3).
 - feat: add the reviewed 64-piece opening fixture in
   `src/fixtures/openingPosition.ts`.
 - docs: record the fixture's source and exception table in
@@ -25,6 +70,10 @@
 - docs: add the reviewed rules artifacts `docs/rules/pawn-vectors.md` and
   `docs/rules/multiplayer-adjudication.md`, plus the `docs/spec/` workflow that
   records each appended decision.
+- docs: add `docs/rules/administrative-actions.md`, the source-linked
+  expected-outcome table for the owner-approved draw-offer expiry and
+  resign/time-loss/walkover freeze sequencing (spec 001/D45), and register it in
+  spec 001's fixture list.
 - docs: record the rules authority order — official basic rules, then the
   official illustrated quick rules, with the patent as supporting evidence only
   — so no two-player chess convention is inherited silently (spec 001/D2, 001/D9).
@@ -78,3 +127,123 @@
   version-controlled `.githooks` through a repo-local `core.hooksPath`; the
   installer is idempotent, refuses to overwrite a different hooks path and never
   reads or writes global or system config, and it needs no Podman.
+- build: emit the dual ESM/CommonJS package (`tsconfig.build.esm.json`,
+  `tsconfig.build.cjs.json`) with per-module type declarations under `dist/`,
+  and rewrite the relative `.ts` specifiers that `tsc` keeps in the emitted
+  declarations to their emitted `.js` targets in
+  `toolkit/scripts/finalize-build.mjs`, which also marks `dist/cjs` CommonJS.
+- build: add the `package.json` export map with built ESM/CJS entry points and
+  declarations, `main`/`module`/`types` fallbacks and `files: ["dist"]`, so the
+  packed tarball ships no sources and `npm private`, the MIT license and the
+  `0.1.0` version stay unchanged (`001/D15`, `001/D43`).
+- test: add the real Node half of the built-package consumer test in
+  `toolkit/scripts/consumer-test.sh` and `make consumer-test` — it builds, packs
+  and installs the tarball in a disposable directory, then runs Node ESM, Node
+  CommonJS and TypeScript declaration consumers that assert the reviewed opening
+  position, a validated custom position, the guarded move seam and the absence
+  of a source-only import fallback; the browser leg remains intentionally absent
+  (`001/D18`).
+- test: add `make integration` — the installed-package complete-game lifecycle
+  gate. It reuses the consumer script's build/pack/install leg through an
+  optional `--integration` argument (so the packaging logic exists once) and
+  then runs `toolkit/consumers/integration-consumer.mjs` against the installed
+  tarball: the §4 Fixture 4a four-active custom position is played into one real
+  move whose snapshot batch mates two controllers, the next active controller
+  loses on time (001/D45) to reach the winner, and the board, retained armies,
+  controllers, statuses, history order/awards/selection, post-terminal atomic
+  rejection, shipped schema subpath, V1 snapshot round trip, atomic invalid
+  load, both `undo()` steps and `reset()` are asserted. It is a lifecycle
+  fixture, not opening-derived reachability, and it decides nothing on the
+  `[open]` checked-non-actor edge. The target stays outside `make verify` while
+  the browser consumer leg is missing.
+- test: extend the packaged consumers to exercise the administrative surface
+  (`pendingDraw`/`proposeDraw`/`respondToDraw`/`recordTimeLoss`/`undo`/`reset`)
+  and its shipped declarations (spec 001/D45).
+- feat: add the versioned V1 JSON snapshot and its strict loader to
+  `Quaternity` (spec 001/D10). `snapshot()` serializes the replay origin, the
+  deterministic coordinate action log, the canonical event records — awards,
+  captures, pawn transitions, explicit promotion choices and turn selections —
+  and the resulting state with its pending offer, agreed draw and outcome;
+  `loadSnapshot(value)` parses and validates the document, re-validates both
+  positions through `createPosition`, replays the actions through the public API
+  against a fresh instance and adopts the result **only** when the replayed state
+  and event records agree with the serialized ones, so no serialized result is
+  ever authoritative. Malformed documents, an unsupported version, unknown keys,
+  invalid positions, illegal or duplicate actions, stale votes and any
+  state/record mismatch are rejected atomically, and an unresolved loaded state
+  fails closed with `UnresolvedAdjudicationError`.
+- feat: ship `schema/quaternits-snapshot-v1.schema.json`, a strict draft
+  2020-12 JSON Schema of the snapshot document, exported from the package and
+  included in the packed tarball.
+- test: add `make contract-check` and `toolkit/scripts/contract-check.ts`, a real
+  contract gate over a pinned `ajv` dev dependency — it compiles the shipped
+  schema and checks runtime-built snapshots plus the committed
+  `toolkit/contract/valid`, `invalid` and `drift` fixtures for schema
+  acceptance, runtime agreement and drift, failing loudly on a broken schema or
+  an empty fixture set. It stays outside `make verify` while the browser gate is
+  still missing.
+- test: cover the snapshot contract with source-linked fixtures — §4 Fixtures 4a
+  and 4b, §5 Fixture 5a, §6 Fixture 6 and the 001/D45 freeze/expiry cases, the
+  custom promotion and advanced-pawn commitment cases, snapshot mutation
+  isolation, load atomicity and the fail-closed unresolved load.
+- test: extend the packaged Node ESM/CJS consumers with a snapshot round trip, a
+  tampered-document rejection and the shipped schema export, and assert in
+  `make consumer-test` that the schema reaches the packed tarball.
+- build: export the snapshot schema from `package.json` and add `schema` to the
+  package `files`, so the tarball still ships no sources.
+- chore: add the pinned `ajv` dev dependency and update the frozen
+  `package-lock.json` for the contract gate.
+- docs: document the snapshot contract and the real `contract-check` gate in
+  `README.md`, `toolkit/README.md` and `AGENTS.md`, and record the remaining
+  browser-consumer gap.
+- test: keep the new `integration` target/script wiring inside `make verify` by
+  checking the `integration` npm script, the `--integration` consumer leg and the
+  Makefile target in `toolkit/scripts/packageManifest.test.ts`, and update
+  `README.md`, `toolkit/README.md`, `AGENTS.md` and `CHANGELOG.md` so
+  `integration` is advertised as a real gate while the browser consumer leg
+  stays honestly pending.
+- test: add the real browser consumer gate `make browser-consumer` (spec
+  001/D18, Phase 4). The `consumer-test` build/pack/disposable-install leg runs
+  with `--browser` inside the digest-pinned official Playwright image, tagged as
+  the project-owned `quaternits-browser:local` and derived by
+  `toolkit/Containerfile.browser`, with `--network=none` and uid 1000; a real
+  headless Chromium then loads the installed tarball's `dist/esm` over an import
+  map served from the disposable install directory, so the browser can never
+  fall back to sources. The page fixture asserts the 64-piece opening position,
+  one committed opening move, an atomic illegal-move rejection, the V1 snapshot
+  round trip, an atomic tampered-document rejection, the attack/check queries on
+  a validated custom position and the fail-closed unresolved-position load. The
+  driver fails loudly on a page error, a failed request, a console error, a
+  failed assertion, a missing browser or a `playwright-core` version that does
+  not match the image's Playwright driver.
+- chore: add the exact `playwright-core` `1.63.0` dev dependency, matching the
+  browser image's Playwright driver, and derive the project-owned
+  `quaternits-browser:local` image in `toolkit/Containerfile.browser` from the
+  vendor image's multi-arch manifest-list digest.
+- build: run every real gate in `make verify` — `contract-check`,
+  `consumer-test`, `integration` and `browser-consumer` now join the fast gates
+  instead of staying outside the mandatory gate, so a green `make verify` means
+  the packed-package, schema-contract and real-browser checks really ran.
+- test: extend `toolkit/scripts/packageManifest.test.ts` to pin the browser
+  gate's wiring inside `make verify` — the `browser-consumer` npm script and
+  `--browser` leg, the `quaternits-browser:local` tag and digest-pinned
+  `toolkit/Containerfile.browser`, the `--network=none` runner, the page
+  fixture's real API assertions, the driver's image/version checks and the
+  absence of a pending-gate advertisement.
+- docs: document the browser gate in `README.md`, `toolkit/README.md` and
+  `AGENTS.md`, including the `browser-image` target, the pinned browser image
+  digest, the deliberate `--network=none` and non-root run, the image's pull
+  cost and the still-unproven CI run.
+- fix: close the real-browser driver's loopback server on **every** path. A
+  `chromium.launch()` that failed, or a `browser.close()` that threw, used to
+  skip `server.close()`; the leaked listening server kept the Node event loop
+  alive, so `make browser-consumer` would hang until the surrounding tool gave up
+  instead of failing. The launch now sits inside the guarded block and the server
+  is closed in an outer `finally` that also releases leftover connections.
+- test: add `toolkit/scripts/browser-consumer-failure-probe.sh`, run by the
+  `--browser` leg of `consumer-test.sh` after the real browser run, which injects
+  a launch failure and a failing browser close out of a disposable temporary
+  `playwright-core` override and asserts each fails within a `timeout` bound with
+  a loud `browser-consumer: FAILED — …` line, so that hang cannot come back
+  silently. `toolkit/scripts/packageManifest.test.ts` pins the probe's wiring
+  inside `make verify`.

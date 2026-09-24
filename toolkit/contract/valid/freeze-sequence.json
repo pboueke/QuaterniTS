@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "initial": {
+    "pieces": [
+      {
+        "square": "a1",
+        "army": "white",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "a12",
+        "army": "red",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "l1",
+        "army": "green",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "l12",
+        "army": "black",
+        "type": "king",
+        "state": null
+      }
+    ],
+    "controllers": {
+      "white": "white",
+      "red": "red",
+      "black": "black",
+      "green": "green"
+    },
+    "players": {
+      "white": "active",
+      "red": "active",
+      "black": "active",
+      "green": "active"
+    },
+    "turn": "white"
+  },
+  "actions": [
+    {
+      "kind": "freeze",
+      "action": "resign",
+      "player": "white"
+    },
+    {
+      "kind": "freeze",
+      "action": "time-loss",
+      "player": "black"
+    }
+  ],
+  "log": [
+    {
+      "kind": "freeze",
+      "action": "resign",
+      "player": "white",
+      "selection": {
+        "kind": "next",
+        "player": "red"
+      }
+    },
+    {
+      "kind": "freeze",
+      "action": "time-loss",
+      "player": "black",
+      "selection": {
+        "kind": "next",
+        "player": "red"
+      }
+    }
+  ],
+  "state": {
+    "position": {
+      "pieces": [
+        {
+          "square": "a1",
+          "army": "white",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "a12",
+          "army": "red",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "l1",
+          "army": "green",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "l12",
+          "army": "black",
+          "type": "king",
+          "state": null
+        }
+      ],
+      "controllers": {
+        "white": "white",
+        "red": "red",
+        "black": "black",
+        "green": "green"
+      },
+      "players": {
+        "white": "frozen",
+        "red": "active",
+        "black": "frozen",
+        "green": "active"
+      },
+      "turn": "red"
+    },
+    "pendingDraw": null,
+    "drawAgreed": false,
+    "outcome": {
+      "kind": "in-progress"
+    }
+  }
+}

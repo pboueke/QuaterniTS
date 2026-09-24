@@ -1,0 +1,1045 @@
+{
+  "version": 1,
+  "initial": {
+    "pieces": [
+      {
+        "square": "a1",
+        "army": "white",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "a4",
+        "army": "white",
+        "type": "rook",
+        "state": null
+      },
+      {
+        "square": "a5",
+        "army": "white",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "up"
+        }
+      },
+      {
+        "square": "a8",
+        "army": "red",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "down"
+        }
+      },
+      {
+        "square": "a9",
+        "army": "red",
+        "type": "rook",
+        "state": null
+      },
+      {
+        "square": "a12",
+        "army": "red",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "b2",
+        "army": "white",
+        "type": "queen",
+        "state": null
+      },
+      {
+        "square": "b4",
+        "army": "white",
+        "type": "knight",
+        "state": null
+      },
+      {
+        "square": "b5",
+        "army": "white",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "up"
+        }
+      },
+      {
+        "square": "b8",
+        "army": "red",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "down"
+        }
+      },
+      {
+        "square": "b9",
+        "army": "red",
+        "type": "bishop",
+        "state": null
+      },
+      {
+        "square": "b11",
+        "army": "red",
+        "type": "queen",
+        "state": null
+      },
+      {
+        "square": "c4",
+        "army": "white",
+        "type": "knight",
+        "state": null
+      },
+      {
+        "square": "c5",
+        "army": "white",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "up"
+        }
+      },
+      {
+        "square": "c8",
+        "army": "red",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "down"
+        }
+      },
+      {
+        "square": "c9",
+        "army": "red",
+        "type": "bishop",
+        "state": null
+      },
+      {
+        "square": "d1",
+        "army": "white",
+        "type": "rook",
+        "state": null
+      },
+      {
+        "square": "d2",
+        "army": "white",
+        "type": "bishop",
+        "state": null
+      },
+      {
+        "square": "d3",
+        "army": "white",
+        "type": "bishop",
+        "state": null
+      },
+      {
+        "square": "d4",
+        "army": "white",
+        "type": "pawn",
+        "state": {
+          "kind": "advanced",
+          "vertical": "up",
+          "horizontal": "right",
+          "committed": null
+        }
+      },
+      {
+        "square": "d9",
+        "army": "red",
+        "type": "pawn",
+        "state": {
+          "kind": "advanced",
+          "vertical": "down",
+          "horizontal": "right",
+          "committed": null
+        }
+      },
+      {
+        "square": "d10",
+        "army": "red",
+        "type": "knight",
+        "state": null
+      },
+      {
+        "square": "d11",
+        "army": "red",
+        "type": "knight",
+        "state": null
+      },
+      {
+        "square": "d12",
+        "army": "red",
+        "type": "rook",
+        "state": null
+      },
+      {
+        "square": "e1",
+        "army": "white",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "right"
+        }
+      },
+      {
+        "square": "e2",
+        "army": "white",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "right"
+        }
+      },
+      {
+        "square": "e3",
+        "army": "white",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "right"
+        }
+      },
+      {
+        "square": "e5",
+        "army": "white",
+        "type": "pawn",
+        "state": {
+          "kind": "advanced",
+          "vertical": "up",
+          "horizontal": "right",
+          "committed": null
+        }
+      },
+      {
+        "square": "e8",
+        "army": "red",
+        "type": "pawn",
+        "state": {
+          "kind": "advanced",
+          "vertical": "down",
+          "horizontal": "right",
+          "committed": null
+        }
+      },
+      {
+        "square": "e10",
+        "army": "red",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "right"
+        }
+      },
+      {
+        "square": "e11",
+        "army": "red",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "right"
+        }
+      },
+      {
+        "square": "e12",
+        "army": "red",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "right"
+        }
+      },
+      {
+        "square": "h1",
+        "army": "green",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "left"
+        }
+      },
+      {
+        "square": "h2",
+        "army": "green",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "left"
+        }
+      },
+      {
+        "square": "h3",
+        "army": "green",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "left"
+        }
+      },
+      {
+        "square": "h5",
+        "army": "green",
+        "type": "pawn",
+        "state": {
+          "kind": "advanced",
+          "vertical": "up",
+          "horizontal": "left",
+          "committed": null
+        }
+      },
+      {
+        "square": "h8",
+        "army": "black",
+        "type": "pawn",
+        "state": {
+          "kind": "advanced",
+          "vertical": "down",
+          "horizontal": "left",
+          "committed": null
+        }
+      },
+      {
+        "square": "h10",
+        "army": "black",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "left"
+        }
+      },
+      {
+        "square": "h11",
+        "army": "black",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "left"
+        }
+      },
+      {
+        "square": "h12",
+        "army": "black",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "left"
+        }
+      },
+      {
+        "square": "i1",
+        "army": "green",
+        "type": "rook",
+        "state": null
+      },
+      {
+        "square": "i2",
+        "army": "green",
+        "type": "knight",
+        "state": null
+      },
+      {
+        "square": "i3",
+        "army": "green",
+        "type": "knight",
+        "state": null
+      },
+      {
+        "square": "i4",
+        "army": "green",
+        "type": "pawn",
+        "state": {
+          "kind": "advanced",
+          "vertical": "up",
+          "horizontal": "left",
+          "committed": null
+        }
+      },
+      {
+        "square": "i9",
+        "army": "black",
+        "type": "pawn",
+        "state": {
+          "kind": "advanced",
+          "vertical": "down",
+          "horizontal": "left",
+          "committed": null
+        }
+      },
+      {
+        "square": "i10",
+        "army": "black",
+        "type": "bishop",
+        "state": null
+      },
+      {
+        "square": "i11",
+        "army": "black",
+        "type": "bishop",
+        "state": null
+      },
+      {
+        "square": "i12",
+        "army": "black",
+        "type": "rook",
+        "state": null
+      },
+      {
+        "square": "j4",
+        "army": "green",
+        "type": "bishop",
+        "state": null
+      },
+      {
+        "square": "j5",
+        "army": "green",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "up"
+        }
+      },
+      {
+        "square": "j8",
+        "army": "black",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "down"
+        }
+      },
+      {
+        "square": "j9",
+        "army": "black",
+        "type": "knight",
+        "state": null
+      },
+      {
+        "square": "k2",
+        "army": "green",
+        "type": "queen",
+        "state": null
+      },
+      {
+        "square": "k4",
+        "army": "green",
+        "type": "bishop",
+        "state": null
+      },
+      {
+        "square": "k5",
+        "army": "green",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "up"
+        }
+      },
+      {
+        "square": "k8",
+        "army": "black",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "down"
+        }
+      },
+      {
+        "square": "k9",
+        "army": "black",
+        "type": "knight",
+        "state": null
+      },
+      {
+        "square": "k11",
+        "army": "black",
+        "type": "queen",
+        "state": null
+      },
+      {
+        "square": "l1",
+        "army": "green",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "l4",
+        "army": "green",
+        "type": "rook",
+        "state": null
+      },
+      {
+        "square": "l5",
+        "army": "green",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "up"
+        }
+      },
+      {
+        "square": "l8",
+        "army": "black",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "down"
+        }
+      },
+      {
+        "square": "l9",
+        "army": "black",
+        "type": "rook",
+        "state": null
+      },
+      {
+        "square": "l12",
+        "army": "black",
+        "type": "king",
+        "state": null
+      }
+    ],
+    "controllers": {
+      "white": "white",
+      "red": "red",
+      "black": "black",
+      "green": "green"
+    },
+    "players": {
+      "white": "active",
+      "red": "active",
+      "black": "active",
+      "green": "active"
+    },
+    "turn": "white"
+  },
+  "actions": [
+    {
+      "kind": "move",
+      "from": "a1",
+      "to": "j9",
+      "promotion": null
+    }
+  ],
+  "log": [],
+  "state": {
+    "position": {
+      "pieces": [
+        {
+          "square": "a1",
+          "army": "white",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "a4",
+          "army": "white",
+          "type": "rook",
+          "state": null
+        },
+        {
+          "square": "a5",
+          "army": "white",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "up"
+          }
+        },
+        {
+          "square": "a8",
+          "army": "red",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "down"
+          }
+        },
+        {
+          "square": "a9",
+          "army": "red",
+          "type": "rook",
+          "state": null
+        },
+        {
+          "square": "a12",
+          "army": "red",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "b2",
+          "army": "white",
+          "type": "queen",
+          "state": null
+        },
+        {
+          "square": "b4",
+          "army": "white",
+          "type": "knight",
+          "state": null
+        },
+        {
+          "square": "b5",
+          "army": "white",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "up"
+          }
+        },
+        {
+          "square": "b8",
+          "army": "red",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "down"
+          }
+        },
+        {
+          "square": "b9",
+          "army": "red",
+          "type": "bishop",
+          "state": null
+        },
+        {
+          "square": "b11",
+          "army": "red",
+          "type": "queen",
+          "state": null
+        },
+        {
+          "square": "c4",
+          "army": "white",
+          "type": "knight",
+          "state": null
+        },
+        {
+          "square": "c5",
+          "army": "white",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "up"
+          }
+        },
+        {
+          "square": "c8",
+          "army": "red",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "down"
+          }
+        },
+        {
+          "square": "c9",
+          "army": "red",
+          "type": "bishop",
+          "state": null
+        },
+        {
+          "square": "d1",
+          "army": "white",
+          "type": "rook",
+          "state": null
+        },
+        {
+          "square": "d2",
+          "army": "white",
+          "type": "bishop",
+          "state": null
+        },
+        {
+          "square": "d3",
+          "army": "white",
+          "type": "bishop",
+          "state": null
+        },
+        {
+          "square": "d4",
+          "army": "white",
+          "type": "pawn",
+          "state": {
+            "kind": "advanced",
+            "vertical": "up",
+            "horizontal": "right",
+            "committed": null
+          }
+        },
+        {
+          "square": "d9",
+          "army": "red",
+          "type": "pawn",
+          "state": {
+            "kind": "advanced",
+            "vertical": "down",
+            "horizontal": "right",
+            "committed": null
+          }
+        },
+        {
+          "square": "d10",
+          "army": "red",
+          "type": "knight",
+          "state": null
+        },
+        {
+          "square": "d11",
+          "army": "red",
+          "type": "knight",
+          "state": null
+        },
+        {
+          "square": "d12",
+          "army": "red",
+          "type": "rook",
+          "state": null
+        },
+        {
+          "square": "e1",
+          "army": "white",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "right"
+          }
+        },
+        {
+          "square": "e2",
+          "army": "white",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "right"
+          }
+        },
+        {
+          "square": "e3",
+          "army": "white",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "right"
+          }
+        },
+        {
+          "square": "e5",
+          "army": "white",
+          "type": "pawn",
+          "state": {
+            "kind": "advanced",
+            "vertical": "up",
+            "horizontal": "right",
+            "committed": null
+          }
+        },
+        {
+          "square": "e8",
+          "army": "red",
+          "type": "pawn",
+          "state": {
+            "kind": "advanced",
+            "vertical": "down",
+            "horizontal": "right",
+            "committed": null
+          }
+        },
+        {
+          "square": "e10",
+          "army": "red",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "right"
+          }
+        },
+        {
+          "square": "e11",
+          "army": "red",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "right"
+          }
+        },
+        {
+          "square": "e12",
+          "army": "red",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "right"
+          }
+        },
+        {
+          "square": "h1",
+          "army": "green",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "left"
+          }
+        },
+        {
+          "square": "h2",
+          "army": "green",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "left"
+          }
+        },
+        {
+          "square": "h3",
+          "army": "green",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "left"
+          }
+        },
+        {
+          "square": "h5",
+          "army": "green",
+          "type": "pawn",
+          "state": {
+            "kind": "advanced",
+            "vertical": "up",
+            "horizontal": "left",
+            "committed": null
+          }
+        },
+        {
+          "square": "h8",
+          "army": "black",
+          "type": "pawn",
+          "state": {
+            "kind": "advanced",
+            "vertical": "down",
+            "horizontal": "left",
+            "committed": null
+          }
+        },
+        {
+          "square": "h10",
+          "army": "black",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "left"
+          }
+        },
+        {
+          "square": "h11",
+          "army": "black",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "left"
+          }
+        },
+        {
+          "square": "h12",
+          "army": "black",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "left"
+          }
+        },
+        {
+          "square": "i1",
+          "army": "green",
+          "type": "rook",
+          "state": null
+        },
+        {
+          "square": "i2",
+          "army": "green",
+          "type": "knight",
+          "state": null
+        },
+        {
+          "square": "i3",
+          "army": "green",
+          "type": "knight",
+          "state": null
+        },
+        {
+          "square": "i4",
+          "army": "green",
+          "type": "pawn",
+          "state": {
+            "kind": "advanced",
+            "vertical": "up",
+            "horizontal": "left",
+            "committed": null
+          }
+        },
+        {
+          "square": "i9",
+          "army": "black",
+          "type": "pawn",
+          "state": {
+            "kind": "advanced",
+            "vertical": "down",
+            "horizontal": "left",
+            "committed": null
+          }
+        },
+        {
+          "square": "i10",
+          "army": "black",
+          "type": "bishop",
+          "state": null
+        },
+        {
+          "square": "i11",
+          "army": "black",
+          "type": "bishop",
+          "state": null
+        },
+        {
+          "square": "i12",
+          "army": "black",
+          "type": "rook",
+          "state": null
+        },
+        {
+          "square": "j4",
+          "army": "green",
+          "type": "bishop",
+          "state": null
+        },
+        {
+          "square": "j5",
+          "army": "green",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "up"
+          }
+        },
+        {
+          "square": "j8",
+          "army": "black",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "down"
+          }
+        },
+        {
+          "square": "j9",
+          "army": "black",
+          "type": "knight",
+          "state": null
+        },
+        {
+          "square": "k2",
+          "army": "green",
+          "type": "queen",
+          "state": null
+        },
+        {
+          "square": "k4",
+          "army": "green",
+          "type": "bishop",
+          "state": null
+        },
+        {
+          "square": "k5",
+          "army": "green",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "up"
+          }
+        },
+        {
+          "square": "k8",
+          "army": "black",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "down"
+          }
+        },
+        {
+          "square": "k9",
+          "army": "black",
+          "type": "knight",
+          "state": null
+        },
+        {
+          "square": "k11",
+          "army": "black",
+          "type": "queen",
+          "state": null
+        },
+        {
+          "square": "l1",
+          "army": "green",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "l4",
+          "army": "green",
+          "type": "rook",
+          "state": null
+        },
+        {
+          "square": "l5",
+          "army": "green",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "up"
+          }
+        },
+        {
+          "square": "l8",
+          "army": "black",
+          "type": "pawn",
+          "state": {
+            "kind": "ordinary",
+            "direction": "down"
+          }
+        },
+        {
+          "square": "l9",
+          "army": "black",
+          "type": "rook",
+          "state": null
+        },
+        {
+          "square": "l12",
+          "army": "black",
+          "type": "king",
+          "state": null
+        }
+      ],
+      "controllers": {
+        "white": "white",
+        "red": "red",
+        "black": "black",
+        "green": "green"
+      },
+      "players": {
+        "white": "active",
+        "red": "active",
+        "black": "active",
+        "green": "active"
+      },
+      "turn": "white"
+    },
+    "pendingDraw": null,
+    "drawAgreed": false,
+    "outcome": {
+      "kind": "in-progress"
+    }
+  }
+}

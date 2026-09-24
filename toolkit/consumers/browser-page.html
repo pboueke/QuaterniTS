@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>quaternits browser consumer</title>
+    <!--
+      The real-browser consumer page for the packed `quaternits` package.
+
+      Served by `toolkit/consumers/browser-consumer.mjs` from the tarball that
+      `toolkit/scripts/consumer-test.sh --browser` installed in a disposable
+      directory, and loaded by a real headless Chromium. The import map resolves
+      the bare specifier `quaternits` to the served `dist/esm` entry point, so
+      the page exercises the built package exactly as a browser consumer would:
+      no bundler, no Node built-ins, no source fallback.
+
+      The page never throws for a failed assertion. It records every check in
+      `globalThis.__qts` and the driver fails the gate loudly when `ok` is false,
+      when an assertion failed, or when the page raised an error at all.
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "quaternits": "/pkg/index.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <p>quaternits browser consumer</p>
+    <script type="module">
+      import {
+        Quaternity,
+        UnresolvedAdjudicationError,
+        createPosition,
+      } from "quaternits";
+
+      const failures = [];
+      let checks = 0;
+
+      /**
+       * Record one assertion result and keep going, so a single failure still
+       * reports every other result instead of hiding them behind the first.
+       */
+      const check = (name, actual, expected) => {
+        checks += 1;
+        if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+          failures.push(
+            `${name}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`,
+          );
+        }
+      };
+
+      const controllers = {
+        white: "white",
+        red: "red",
+        black: "black",
+        green: "green",
+      };
+      const allActive = {
+        white: "active",
+        red: "active",
+        black: "active",
+        green: "active",
+      };
+
+      try {
+        // 1. The reviewed 64-piece opening position (001/D9/001/D24).
+        const game = new Quaternity();
+        check("opening turn", game.turn(), "white");
+        check("opening pieces", game.position().board.size, 64);
+        check("opening outcome", game.outcome(), { kind: "in-progress" });
+        check("opening has committable moves", game.moves().length > 0, true);
+
+        // 2. A real committed move, and an atomic rejection (001/D38–001/D41).
+        const move = game.move({ from: "d4", to: "d5" });
+        check("move kind", move.kind, "move");
+        check("history length", game.history().length, 1);
+        check("landing army", game.position().board.get("d5")?.army, "white");
+        check("origin empty", game.position().board.has("d4"), false);
+        const afterMove = JSON.stringify(game.snapshot());
+        let rejected = false;
+        try {
+          game.move({ from: "d4", to: "d7" });
+        } catch {
+          rejected = true;
+        }
+        check("illegal move rejected", rejected, true);
+        check(
+          "illegal move left the state unchanged",
+          JSON.stringify(game.snapshot()),
+          afterMove,
+        );
+
+        // 3. The versioned V1 snapshot and its strict loader (001/D10).
+        const snapshot = game.snapshot();
+        check("snapshot version", snapshot.version, 1);
+        check(
+          "coordinate action log",
+          snapshot.actions.map((action) => [
+            action.kind,
+            action.from,
+            action.to,
+            action.promotion,
+          ]),
+          [["move", "d4", "d5", null]],
+        );
+        const reloaded = new Quaternity();
+        reloaded.loadSnapshot(JSON.parse(JSON.stringify(snapshot)));
+        check(
+          "snapshot round trip",
+          JSON.stringify(reloaded.snapshot()),
+          JSON.stringify(snapshot),
+        );
+
+        // 4. A tampered document is rejected atomically: the loader replays the
+        // actions and never trusts the serialized state (001/D10).
+        const tampered = JSON.parse(JSON.stringify(snapshot));
+        tampered.state.outcome = { kind: "draw" };
+        const beforeTamper = JSON.stringify(reloaded.snapshot());
+        let tamperedRejected = false;
+        try {
+          reloaded.loadSnapshot(tampered);
+        } catch {
+          tamperedRejected = true;
+        }
+        check("tampered snapshot rejected", tamperedRejected, true);
+        check(
+          "tampered load left the state unchanged",
+          JSON.stringify(reloaded.snapshot()),
+          beforeTamper,
+        );
+
+        // 5. Attack/check queries on a validated custom position.
+        const customGame = new Quaternity(
+          createPosition({
+            pieces: [
+              { square: "a1", army: "white", type: "king" },
+              { square: "e1", army: "white", type: "rook" },
+              { square: "a12", army: "red", type: "king" },
+              { square: "l12", army: "black", type: "king" },
+              { square: "l1", army: "green", type: "king" },
+            ],
+            controllers,
+            players: allActive,
+            turn: "white",
+          }),
+        );
+        check(
+          "attackers",
+          customGame
+            .attackers("e2", "white")
+            .map((attacker) => attacker.square),
+          ["e1"],
+        );
+        check("isAttacked", customGame.isAttacked("e2", "white"), true);
+        check("inCheck", customGame.inCheck("white"), false);
+
+        // 6. The `[open]` checked-non-actor edge still fails closed in a
+        // browser: the `d38-coordinate-search.md` §2 witness position has Red on
+        // turn with internal moves but no public committable move (001/D40(3)).
+        let unresolvedRejected = false;
+        try {
+          new Quaternity(
+            createPosition({
+              pieces: [
+                { square: "h7", army: "white", type: "king" },
+                { square: "a12", army: "white", type: "rook" },
+                { square: "l1", army: "white", type: "rook" },
+                { square: "c3", army: "white", type: "knight" },
+                { square: "c4", army: "white", type: "knight" },
+                { square: "d8", army: "white", type: "knight" },
+                { square: "a1", army: "red", type: "king" },
+                { square: "a9", army: "red", type: "bishop" },
+                { square: "b5", army: "red", type: "knight" },
+                { square: "a6", army: "black", type: "king" },
+                { square: "j6", army: "green", type: "king" },
+              ],
+              controllers,
+              players: allActive,
+              turn: "red",
+            }),
+          );
+        } catch (error) {
+          unresolvedRejected = error instanceof UnresolvedAdjudicationError;
+        }
+        check(
+          "unresolved position fails closed at load",
+          unresolvedRejected,
+          true,
+        );
+
+        globalThis.__qts = { ok: failures.length === 0, failures, checks };
+      } catch (error) {
+        globalThis.__qts = {
+          ok: false,
+          failures: [`the browser page threw: ${error?.stack ?? error}`],
+          checks,
+        };
+      }
+    </script>
+  </body>
+</html>

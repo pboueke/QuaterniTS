@@ -1,0 +1,154 @@
+{
+  "version": 1,
+  "initial": {
+    "pieces": [
+      {
+        "square": "a1",
+        "army": "white",
+        "type": "rook",
+        "state": null
+      },
+      {
+        "square": "a11",
+        "army": "white",
+        "type": "pawn",
+        "state": {
+          "kind": "ordinary",
+          "direction": "up"
+        }
+      },
+      {
+        "square": "b6",
+        "army": "red",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "e1",
+        "army": "white",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "g6",
+        "army": "green",
+        "type": "king",
+        "state": null
+      },
+      {
+        "square": "l12",
+        "army": "black",
+        "type": "king",
+        "state": null
+      }
+    ],
+    "controllers": {
+      "white": "white",
+      "red": "red",
+      "black": "black",
+      "green": "green"
+    },
+    "players": {
+      "white": "active",
+      "red": "active",
+      "black": "active",
+      "green": "active"
+    },
+    "turn": "white"
+  },
+  "actions": [
+    {
+      "kind": "move",
+      "from": "a11",
+      "to": "a12",
+      "promotion": "queen"
+    }
+  ],
+  "log": [
+    {
+      "kind": "move",
+      "from": "a11",
+      "to": "a12",
+      "army": "white",
+      "controller": "white",
+      "promotes": true,
+      "promotion": "queen",
+      "captured": null,
+      "pawn": {
+        "before": {
+          "kind": "ordinary",
+          "direction": "up"
+        },
+        "after": {
+          "kind": "ordinary",
+          "direction": "up"
+        }
+      },
+      "awards": [],
+      "selection": {
+        "kind": "next",
+        "player": "red"
+      }
+    }
+  ],
+  "state": {
+    "position": {
+      "pieces": [
+        {
+          "square": "a1",
+          "army": "white",
+          "type": "rook",
+          "state": null
+        },
+        {
+          "square": "a12",
+          "army": "white",
+          "type": "queen",
+          "state": null
+        },
+        {
+          "square": "b6",
+          "army": "red",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "e1",
+          "army": "white",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "g6",
+          "army": "green",
+          "type": "king",
+          "state": null
+        },
+        {
+          "square": "l12",
+          "army": "black",
+          "type": "king",
+          "state": null
+        }
+      ],
+      "controllers": {
+        "white": "white",
+        "red": "red",
+        "black": "black",
+        "green": "green"
+      },
+      "players": {
+        "white": "active",
+        "red": "active",
+        "black": "active",
+        "green": "active"
+      },
+      "turn": "red"
+    },
+    "pendingDraw": null,
+    "drawAgreed": false,
+    "outcome": {
+      "kind": "in-progress"
+    }
+  }
+}
