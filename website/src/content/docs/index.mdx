@@ -27,7 +27,7 @@ trademarks, artwork or other assets.
 <CardGrid>
   <LinkCard
     title="Getting started"
-    description="Build the package with the pinned toolkit and commit your first coordinate move."
+    description="Install the package and commit your first coordinate move."
     href="/QuaterniTS/getting-started/"
   />
   <LinkCard
@@ -64,11 +64,7 @@ for applications **and** for the education and research of the game's rules.
     </li>
     <li>
       <strong>No notation compatibility.</strong> Long coordinates in, typed
-      event records out; there is no FEN, PGN or SAN support in any form (
-      <a href="https://github.com/pboueke/QuaterniTS/blob/main/docs/spec/active/001-adopt-quaternity/decisions.md">
-        001/D4
-      </a>
-      ).
+      event records out; there is no FEN, PGN or SAN support.
     </li>
     <li>
       <strong>Not a game UI.</strong> This site documents the library; the
@@ -87,8 +83,3 @@ for applications **and** for the education and research of the game's rules.
   defensive moves but no safe publicly committable move has no official outcome;
   only that edge fails closed with `UnresolvedAdjudicationError`. See
   [honest limits](/QuaterniTS/scope/).
-- **The live site activates after a deployment.** This site is published to
-  GitHub Pages by `.github/workflows/pages.yml`; the URL
-  [pboueke.github.io/QuaterniTS](https://pboueke.github.io/QuaterniTS/) only
-  serves content once the owner enables the Pages source and a deployment
-  succeeds.

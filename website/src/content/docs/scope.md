@@ -14,7 +14,7 @@ The MIT [`LICENSE`](https://github.com/pboueke/QuaterniTS/blob/main/LICENSE)
 covers this project's **original work only** — not third-party names, rules
 text, trademarks, artwork or other assets. QuaterniTS is developed free of
 charge with no monetization; that is a project intention, not a license
-condition, and it limits no one's MIT rights (`001/D42`, `001/D43`).
+condition, and it limits no one's MIT rights.
 
 ## Honest limits
 
@@ -26,28 +26,16 @@ condition, and it limits no one's MIT rights (`001/D42`, `001/D43`).
    **internal defensive moves but no safe publicly committable move** has no
    official outcome. Only that edge fails closed with
    `UnresolvedAdjudicationError`, while ordinary checkmate (a checked controller
-   with no internal defenses) still applies (`001/D38`–`001/D41`,
-   [multiplayer adjudication](/QuaterniTS/reference/rules/multiplayer-adjudication/)).
+   with no internal defenses) still applies. See
+   [multiplayer adjudication](/QuaterniTS/reference/rules/multiplayer-adjudication/).
    `UnresolvedAdjudicationError` is a **software error, never a game outcome**:
    no mate, pass, draw, elimination or award is decided for it.
 3. **No notation compatibility.** Long coordinates in, typed event records out;
    there is **no** FEN, PGN or SAN support in any form, and no chess.js API
-   parity (`001/D4`). See the
+   parity. See the
    [compatibility matrix](/QuaterniTS/reference/compatibility/).
 4. **No board renderer.** The library is headless and ships no UI, server,
    clock, opponent or AI.
 
 The official game rule for the open edge stays `[open]`; no complete game-rule
 or complete-engine coverage is claimed.
-
-## What this site is
-
-This is a static documentation site — a presentation and delivery layer for the
-library. It contains no game logic and no game UI, and it depends on no CDN or
-remote runtime asset. It is built inside the repository's pinned toolkit by
-`make docs-build` and deployed from `.github/workflows/pages.yml`.
-
-The published URL, <https://pboueke.github.io/QuaterniTS/>, serves content only
-after the owner enables the Pages **GitHub Actions** source and a deployment
-succeeds; until then this site exists as a buildable, tested artifact in the
-repository.

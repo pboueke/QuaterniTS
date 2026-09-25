@@ -24,7 +24,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   BASE,
-  DEMO_MARKER,
   GENERATED_DOCS_DIR,
   REPO_ROOT,
   SITE,
@@ -44,8 +43,6 @@ import {
   rewriteCanonicalLinks,
   routeForSource,
   runAstroBuild,
-  scriptBodies,
-  scriptSources,
   sha256,
   sha256OfSource,
   verifyDocsBuild,
@@ -109,7 +106,7 @@ function recordingHash(): {
 /** A complete, base-prefixed build output for the fixture pages. */
 function writeDistFixture(root: string, pages: readonly GeneratedPage[]): void {
   writeFile(root, ".nojekyll", "");
-  writeFile(root, "_astro/site.js", `console.log("${DEMO_MARKER}");`);
+  writeFile(root, "_astro/site.js", 'console.log("site");');
   writeFile(root, "_astro/site.css", "body{}");
   writeFile(
     root,
@@ -133,14 +130,6 @@ function writeDistFixture(root: string, pages: readonly GeneratedPage[]): void {
     }
     writeFile(root, `${route}/index.html`, `${route} page`);
   }
-  writeFile(
-    root,
-    "extending/index.html",
-    [
-      `<div ${DEMO_MARKER}></div>`,
-      `<script src="${BASE}_astro/site.js"></script>`,
-    ].join("\n"),
-  );
   for (const page of pages) {
     writeFile(
       root,
@@ -390,15 +379,6 @@ test("linkTargets extracts non-empty href and src attribute values", () => {
   );
 });
 
-test("scriptBodies and scriptSources read script elements", () => {
-  const html = [
-    '<script>const a = "one";</script>',
-    '<script type="module" src="/QuaterniTS/_astro/site.js"></script>',
-  ].join("\n");
-  assert.deepEqual(scriptBodies(html), ['const a = "one";', ""]);
-  assert.deepEqual(scriptSources(html), ["/QuaterniTS/_astro/site.js"]);
-});
-
 test("linkProblem accepts external links, anchors and resolvable internal links", () => {
   const files = new Set([
     ".nojekyll",
@@ -504,14 +484,23 @@ test("verifyDocsBuild fails when a static page or the homepage is missing", () =
   });
 });
 
-test("verifyDocsBuild fails when the extending page is missing", () => {
+test("the extending guide is retained as a draft, not published", () => {
+  const draft = path.join(
+    REPO_ROOT,
+    "website/src/content/drafts/extending.mdx",
+  );
+  assert.ok(existsSync(draft));
+  assert.match(readFileSync(draft, "utf8"), /SnippetDemo/);
+  assert.ok(
+    !existsSync(path.join(REPO_ROOT, "website/src/content/docs/extending.mdx")),
+  );
   withTempDir((dir) => {
     const pages = buildPages(testSources());
     writeDistFixture(dir, pages);
-    rmSync(path.join(dir, "extending"), { recursive: true, force: true });
+    writeFile(dir, "extending/index.html", "published draft");
     assert.throws(
       () => verifyFixture(dir, pages),
-      /missing page extending\/index\.html/,
+      /draft page.*must not be published/,
     );
   });
 });
@@ -578,7 +567,7 @@ test("verifyDocsBuild fails on a remote asset reference", () => {
     writeFile(
       dir,
       "_astro/site.js",
-      `import "https://cdn.jsdelivr.net/npm/x"; console.log("${DEMO_MARKER}");`,
+      'import "https://cdn.jsdelivr.net/npm/x";',
     );
     assert.throws(
       () => verifyFixture(dir, pages),
@@ -595,51 +584,6 @@ test("verifyDocsBuild fails when the homepage canonical link is wrong", () => {
     assert.throws(
       () => verifyFixture(dir, pages),
       /homepage canonical link is missing or wrong/,
-    );
-  });
-});
-
-test("verifyDocsBuild fails when the embedded component is not bundled", () => {
-  withTempDir((dir) => {
-    const pages = buildPages(testSources());
-    writeDistFixture(dir, pages);
-    writeFile(dir, "_astro/site.js", "console.log('no marker');");
-    assert.throws(
-      () => verifyFixture(dir, pages),
-      /browser script is not bundled/,
-    );
-  });
-});
-
-test("verifyDocsBuild accepts an inline bundled browser script", () => {
-  withTempDir((dir) => {
-    const pages = buildPages(testSources());
-    writeDistFixture(dir, pages);
-    writeFile(
-      dir,
-      "extending/index.html",
-      [
-        `<div ${DEMO_MARKER}></div>`,
-        `<script>const marker = "${DEMO_MARKER}";</script>`,
-        '<script src="https://example.com/tracker.js"></script>',
-      ].join("\n"),
-    );
-    verifyFixture(dir, pages);
-  });
-});
-
-test("verifyDocsBuild fails when the embedded component's script is absent", () => {
-  withTempDir((dir) => {
-    const pages = buildPages(testSources());
-    writeDistFixture(dir, pages);
-    writeFile(
-      dir,
-      "extending/index.html",
-      `<div ${DEMO_MARKER}></div><script src="${BASE}_astro/missing.js"></script>`,
-    );
-    assert.throws(
-      () => verifyFixture(dir, pages),
-      /browser script is not bundled/,
     );
   });
 });

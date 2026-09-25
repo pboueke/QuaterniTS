@@ -4,7 +4,7 @@ description: The versioned V1 JSON persistence document, its guaranteed determin
 ---
 
 `snapshot()` returns the versioned **V1 JSON persistence document** and
-`loadSnapshot(value)` restores a game from one (`001/D10`). It is this library's
+`loadSnapshot(value)` restores a game from one. It is this library's
 persistence format — there is no FEN, EPD or PGN.
 
 ## The document
@@ -57,10 +57,7 @@ unchanged — when the document is:
 
 The runtime shape is mirrored by
 [`schema/quaternits-snapshot-v1.schema.json`](https://github.com/pboueke/QuaterniTS/blob/main/schema/quaternits-snapshot-v1.schema.json),
-a draft 2020-12 JSON Schema exported from the package. `make contract-check`
-compiles it in strict mode and compares it against runtime-built documents and
-the committed valid/invalid/drift fixtures, so the schema, the runtime and the
-fixtures cannot drift apart silently.
+a draft 2020-12 JSON Schema exported from the package.
 
-See the [usage reference](/QuaterniTS/reference/usage/) for the executable
-save/restore example, which `make test` runs against the real API.
+See the [usage reference](/QuaterniTS/reference/usage/) for more save/restore
+examples.

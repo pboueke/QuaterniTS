@@ -1,79 +1,61 @@
 ---
 title: Getting started
-description: Build the package with the pinned rootless-Podman toolkit and run your first coordinate move.
+description: Install QuaterniTS and make your first move.
 ---
 
-QuaterniTS is a **headless TypeScript rules library**, not an application. You
-build the package and consume it from your own code. Nothing here asks you to
-publish anything: the package keeps `"private": true` as an accidental-publish
-safeguard until the owner performs a deliberate release (`001/D43`).
+QuaterniTS is a headless rules library: bring your own interface, storage and
+players. It starts from the reviewed 64-piece opening on a 12 × 12 board.
 
-## Prerequisites
-
-Every tool command in this repository runs inside a **digest-pinned Node
-container** through **rootless Podman**. The host needs only `podman` (rootless),
-`make`, `bash` and `git` — no host Node or npm install.
-
-```sh
-make preflight        # fail loudly unless rootless Podman is usable
-make toolkit-image    # build the pinned image once (also runs on demand)
-make toolkit-deps     # npm ci from the frozen lockfile
-```
-
-## Build the package
-
-`make build` emits the dual ESM/CJS package and its TypeScript declarations into
-`dist/`:
-
-```sh
-make build
-```
-
-Then exercise the built package the way a consumer does:
-
-```sh
-make consumer-test    # pack and run Node ESM/CJS + TypeScript consumers
-make integration      # run the installed package through its lifecycle fixture
-make browser-consumer # run the installed package in a real headless Chromium
-```
-
-## Use the library
-
-The default position is the reviewed 64-piece opening; White is on turn. Set up a
-game and commit a coordinate move:
-
-```ts
-import { Quaternity } from "quaternits";
-
-const game = new Quaternity();
-console.log("turn:", game.turn(), "pieces:", game.position().board.size);
-console.log("in check:", game.inCheck("white"));
-
-const event = game.move({ from: "b4", to: "c2" });
-console.log("selection:", event.selection);
-```
-
-Every TypeScript example in the [usage reference](/QuaterniTS/reference/usage/)
-is executed against the real public API by `toolkit/scripts/docs-examples.test.ts`
-inside `make test`, so an example that drifts from the code fails the gate
-instead of misleading you.
-
-## Install from npm (after a release)
-
-The npm package id is `quaternits`, but it is **not published yet**:
+## Install
 
 ```sh
 npm install quaternits
 ```
 
-That command resolves only after a deliberate package release. Until then, build
-and pack the current checkout with the toolkit as shown above.
+The package includes TypeScript declarations and supports both ESM and CommonJS.
 
-## Next steps
+## Make a move
 
-- [Public API](/QuaterniTS/api/) — the class, queries and typed events.
-- [Usage examples](/QuaterniTS/reference/usage/) — runnable, verified examples.
-- [Snapshots](/QuaterniTS/snapshots/) — the versioned V1 persistence document.
-- [Compatibility](/QuaterniTS/reference/compatibility/) — the chess.js-style
-  matrix and the deliberate gaps.
-- [Contributing](/QuaterniTS/contributing/) — the spec workflow and quality gates.
+```ts
+import { Quaternity } from "quaternits";
+
+const game = new Quaternity();
+console.log(game.turn()); // "white"
+
+// Only moves that can be committed by the current controller are listed.
+const available = game.moves();
+console.log(available.some(({ from, to }) => from === "b4" && to === "c2"));
+
+const event = game.move({ from: "b4", to: "c2" });
+console.log(event.selection, game.turn());
+```
+
+Moves use long coordinates with files `a`–`l` and ranks `1`–`12`. A pawn
+promoting on a move needs an explicit choice of `queen`, `rook`, `bishop` or
+`knight`. Invalid actions throw without changing the game.
+
+## Inspect and save a game
+
+```ts
+console.log(game.position().board.size);
+console.log(game.inCheck(game.turn()));
+console.log(game.history());
+
+const snapshot = game.snapshot();
+const restored = new Quaternity();
+restored.loadSnapshot(snapshot);
+console.log(restored.turn());
+```
+
+Snapshots are versioned JSON documents containing the position, action log and
+resulting state. Loading one validates and replays the recorded actions.
+
+## Keep exploring
+
+- [Usage examples](/QuaterniTS/reference/usage/) — moves, checks, draw offers,
+  snapshots and undo.
+- [Public API](/QuaterniTS/api/) and
+  [compatibility guide](/QuaterniTS/reference/compatibility/).
+- [Rules and fixtures](/QuaterniTS/rules/) — the opening position and
+  source-linked examples.
+- [Scope](/QuaterniTS/scope/) — supported outcomes and known limitations.

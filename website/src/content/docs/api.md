@@ -56,7 +56,7 @@ that a pawn promotes on requires an explicit
 
 | Call                  | Returns              | Notes                                                                                                                                                                           |
 | --------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `snapshot()`          | `QuaternitySnapshot` | The versioned V1 JSON document: replay origin, action log, events and state (`001/D10`).                                                                                        |
+| `snapshot()`          | `QuaternitySnapshot` | The versioned V1 JSON document: replay origin, action log, events and state.                                                                                                    |
 | `loadSnapshot(value)` | `void`               | Parses, re-validates and **replays** the actions, adopting the result only if the replay agrees. A tampered, malformed, unsupported or illegal document is rejected atomically. |
 
 See [Snapshots](/QuaterniTS/snapshots/) for the document shape and the shipped

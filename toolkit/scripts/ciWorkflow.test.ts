@@ -8,8 +8,7 @@
  * developer runs, least permissions, and no secrets, service stack or host
  * Node/npm substitute.
  *
- * These checks cannot prove a GitHub run: the workflow is UNPROVEN until the
- * owner pushes it and watches a run.
+ * These checks validate workflow structure; run results come from GitHub Actions.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";

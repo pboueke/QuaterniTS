@@ -13,8 +13,6 @@
 # the gate; it is a real check, not a cache, and it is deliberately not
 # skipped or stubbed.
 #
-# UNPROVEN: no GitHub run has been observed yet. This file claims nothing until
-# the owner pushes it and watches a run.
 name: CI
 
 on:

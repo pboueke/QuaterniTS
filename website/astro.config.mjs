@@ -58,14 +58,37 @@ export default defineConfig({
         {
           label: "Rules & fixtures",
           items: [
-            { label: "Rule policy index", link: "/rules/" },
+            { label: "Overview", link: "/rules/" },
             {
               label: "Rules",
-              items: [{ autogenerate: { directory: "reference/rules" } }],
+              items: [
+                { label: "Pawns", link: "/reference/rules/pawn-vectors/" },
+                {
+                  label: "Checkmate and assimilation",
+                  link: "/reference/rules/multiplayer-adjudication/",
+                },
+                {
+                  label: "Draws and other actions",
+                  link: "/reference/rules/administrative-actions/",
+                },
+                {
+                  label: "Unresolved positions",
+                  link: "/reference/rules/d38-coordinate-search/",
+                },
+              ],
             },
             {
-              label: "Fixtures",
-              items: [{ autogenerate: { directory: "reference/fixtures" } }],
+              label: "Examples",
+              items: [
+                {
+                  label: "Starting position",
+                  link: "/reference/fixtures/opening-position/",
+                },
+                {
+                  label: "Example match",
+                  link: "/reference/fixtures/opening-to-terminal-administrative-match/",
+                },
+              ],
             },
           ],
         },
@@ -73,7 +96,6 @@ export default defineConfig({
           label: "Project",
           items: [
             { label: "Contributing", link: "/contributing/" },
-            { label: "Extending the site", link: "/extending/" },
             { label: "Notation & scope", link: "/scope/" },
           ],
         },

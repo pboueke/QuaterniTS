@@ -279,13 +279,6 @@ the subordinate id ranges rootless Podman needs, then runs `make preflight` and
 uses no secrets and declares no service stack, and it never installs Node or
 runs npm on the runner: every tool stays inside the digest-pinned image.
 
-**UNPROVEN:** no GitHub run has been observed, so the workflow is a claim only
-after the owner pushes it and watches a run. A green `make verify` on a
-developer machine is not evidence of a green CI run. Prettier parses this
-workflow as YAML during `make fmt-check`, and
-`toolkit/scripts/ciWorkflow.test.ts` pins its structure, but neither executes
-GitHub Actions.
-
 ### Docs site build and GitHub Pages
 
 `make docs-build` runs `toolkit/scripts/docs-build.ts` inside the same pinned
@@ -317,22 +310,8 @@ foreground, so Ctrl-C stops it. It is interactive and never part of
 `make verify`.
 
 **Enablement (owner, one-time):** in the repository, open **Settings → Pages →
-Build and deployment** and set **Source** to **GitHub Actions**. The site then
-serves at <https://pboueke.github.io/QuaterniTS/> after a successful deployment.
-No GitHub Pages run has been observed yet, so neither the workflow nor the live
-URL is proven.
-
-## Honest limits
-
-Every gate of the built-package and snapshot contract now exists and runs in
-`make verify`, so no part of it is stubbed or left pending. Two limits remain:
-
-- the browser image is large (~2.8 GB) and is pulled on a fresh CI runner, so CI
-  is slower than the local gate after the first build;
-- **CI is still unproven**: no GitHub run has been observed. `make verify` passing
-  on a developer machine is not evidence of a green CI run, and Prettier and
-  `toolkit/scripts/ciWorkflow.test.ts` check the workflow's structure without
-  executing GitHub Actions.
+Build and deployment** and set **Source** to **GitHub Actions**. The site is
+served at <https://pboueke.github.io/QuaterniTS/> after deployment.
 
 This toolkit proves the toolchain, not the game: the headless engine still has
 the documented `[open]` checked-non-actor edge and is not a complete engine.

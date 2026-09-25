@@ -65,12 +65,12 @@ and verifies every page, link, asset and canonical-source marker; it is part of
   runnable; `make test` executes them.
 - Run `make docs-build` (or the full `make verify`) after changing docs, site
   content or `website/astro.config.mjs`.
+- Run `make docs-preview` to browse the built site at
+  <http://127.0.0.1:4321/QuaterniTS/>. Press Ctrl-C to stop the server.
 
-`.github/workflows/pages.yml` deploys the verified `website/dist` to GitHub
-Pages. The published URL, <https://pboueke.github.io/QuaterniTS/>, serves
-content only after the owner enables the repository's Pages **GitHub Actions**
-source (**Settings → Pages → Build and deployment → Source: GitHub Actions**) and
-a deployment succeeds; no GitHub Pages run has been observed yet.
+`.github/workflows/pages.yml` deploys the verified `website/dist` to
+<https://pboueke.github.io/QuaterniTS/>. Enable **GitHub Actions** under
+**Settings → Pages → Build and deployment → Source** to deploy this site.
 
 ## Pull requests
 
@@ -85,9 +85,6 @@ a deployment succeeds; no GitHub Pages run has been observed yet.
 - Do not add official logos, artwork or rulebook text, and do not imply that MIT
   grants rights to any third-party game name, rules text, trademark or other
   asset.
-- Maintainers own releases: do not remove `"private": true` from
-  [`package.json`](package.json) or publish the package. The owner performs that
-  deliberate release step (`001/D42`, `001/D43`).
 
 ## Where things live
 

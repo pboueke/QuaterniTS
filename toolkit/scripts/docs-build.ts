@@ -67,10 +67,7 @@ export const STATIC_ROUTES: readonly string[] = [
   "rules",
   "scope",
   "contributing",
-  "extending",
 ];
-/** The self-contained Astro component's data attribute, proven in the build. */
-export const DEMO_MARKER = "data-quaternits-square-probe";
 /** Remote asset hosts a self-contained site must never depend on. */
 export const FORBIDDEN_REMOTE_ASSETS: readonly string[] = [
   "cdn.jsdelivr.net",
@@ -345,20 +342,6 @@ export function linkTargets(html: string): string[] {
     .filter((value) => value !== "");
 }
 
-/** The inline bodies of every `<script>` element in an HTML document. */
-export function scriptBodies(html: string): string[] {
-  return [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(
-    (match) => match.slice(1).join(""),
-  );
-}
-
-/** The `src` of every `<script>` element in an HTML document. */
-export function scriptSources(html: string): string[] {
-  return [...html.matchAll(/<script\b[^>]*\bsrc="([^"]*)"/g)].map((match) =>
-    match.slice(1).join(""),
-  );
-}
-
 /**
  * Whether one link value resolves inside the built site. External URLs,
  * anchors and protocol-relative URLs are not this site's problem; an internal
@@ -498,33 +481,8 @@ export function verifyDocsBuild(input: VerifyInput): void {
     }
   }
 
-  const extending = fileSet.has(pageFile("extending"))
-    ? readFileSync(path.join(input.distDir, pageFile("extending")), "utf8")
-    : "";
-  if (!extending.includes(DEMO_MARKER)) {
-    problems.push(
-      `${pageFile("extending")} must embed the self-contained component (${DEMO_MARKER})`,
-    );
-  } else {
-    const inline = scriptBodies(extending).some((body) =>
-      body.includes(DEMO_MARKER),
-    );
-    const external = scriptSources(extending)
-      .filter((value) => value.startsWith(BASE))
-      .some((value) => {
-        const file = value.slice(BASE.length).replace(/[?#].*$/, "");
-        return (
-          fileSet.has(file) &&
-          readFileSync(path.join(input.distDir, file), "utf8").includes(
-            DEMO_MARKER,
-          )
-        );
-      });
-    if (!inline && !external) {
-      problems.push(
-        "the self-contained component's browser script is not bundled into the site",
-      );
-    }
+  if (fileSet.has(pageFile("extending"))) {
+    problems.push("draft page extending/index.html must not be published");
   }
 
   if (problems.length > 0) {

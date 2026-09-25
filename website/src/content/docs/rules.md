@@ -1,47 +1,35 @@
 ---
-title: Rule policy index
-description: How ambiguous rules are resolved, which sources govern, and where the source-linked fixtures live.
+title: Rules and examples
+description: Official sources, pawn movement, multiplayer outcomes and reviewed positions.
 sidebar:
   order: 0
 ---
 
-QuaterniTS decides no rule silently. The **official basic rules** and the
-**illustrated quick rules** govern, the pictured board settles the opening
-position, and the patent is supporting evidence only. Every ambiguous rule needs
-an additive decision in the spec's decision record, a reviewed source-linked
-expected-outcome fixture, and a test written before implementation (`001/D11`).
+QuaterniTS follows the [official basic rules](https://www.quaternity.com/play-quaternity)
+and the [illustrated quick rules](https://play.quaternity.com/static/media/quick_start_rules.ee41e5de.pdf).
+The pictured board governs the starting position. The
+[patent](https://patents.google.com/patent/US20150352433A1/en) provides
+supporting background but does not override the illustrated rules.
 
-## Sources
+## Movement and outcomes
 
-- [Official basic rules](https://www.quaternity.com/play-quaternity)
-- [Illustrated quick rules](https://play.quaternity.com/static/media/quick_start_rules.ee41e5de.pdf)
-- [Patent US20150352433A1](https://patents.google.com/patent/US20150352433A1/en) — supporting evidence only; never overrides the official rules or the pictured board.
+- [Pawns](/QuaterniTS/reference/rules/pawn-vectors/) — ordinary and advanced
+  movement, directional commitment, captures and promotion.
+- [Checkmate and assimilation](/QuaterniTS/reference/rules/multiplayer-adjudication/) —
+  multiplayer check, frozen kings, mate batches and army transfer.
+- [Draws and other actions](/QuaterniTS/reference/rules/administrative-actions/) —
+  offers, passes, resignation, time loss and walkovers.
+- [Unresolved positions](/QuaterniTS/reference/rules/d38-coordinate-search/) —
+  a documented edge that fails closed rather than inventing an outcome.
 
-## Source-linked fixtures on this site
+## Reviewed positions
 
-These pages are the repository's canonical `docs/` files, copied into the site at
-build time with their links rewritten. Edits are made in the repository files,
-never here.
+- [Starting position](/QuaterniTS/reference/fixtures/opening-position/) — the
+  64-piece opening and its source comparison.
+- [Example match](/QuaterniTS/reference/fixtures/opening-to-terminal-administrative-match/) —
+  committed moves from the opening followed by an administrative finish; this
+  is not an opening-to-checkmate demonstration.
 
-- [Opening position fixture](/QuaterniTS/reference/fixtures/opening-position/) —
-  the reviewed 64-piece opening and its source/exception table.
-- [Opening-to-terminal administrative match](/QuaterniTS/reference/fixtures/opening-to-terminal-administrative-match/) —
-  the executed match from that opening to the owner-approved administrative
-  finish. It is **not** a proof of opening-to-mate.
-- [Pawn move vectors](/QuaterniTS/reference/rules/pawn-vectors/) — orientation,
-  ordinary and advanced central pawns, commitment and promotion.
-- [Multiplayer adjudication](/QuaterniTS/reference/rules/multiplayer-adjudication/) —
-  multiple kings, indirect mate, frozen armies, cascades and the open edge.
-- [Administrative action sequencing](/QuaterniTS/reference/rules/administrative-actions/) —
-  draw-offer lifetime, undo coupling and the freeze actions.
-- [D38 coordinate search](/QuaterniTS/reference/rules/d38-coordinate-search/) —
-  the bounded coordinate search that found the checked-non-actor edge.
-
-## Decision records
-
-The numbered decisions (`001/D1`–`001/D45`) and the active spec stay in the
-repository, where they are kept byte-stable for review:
-
-- [Spec 001 — QuaterniTS rules library](https://github.com/pboueke/QuaterniTS/blob/main/docs/spec/active/001-adopt-quaternity/spec.md)
-- [Decisions 001/D1–001/D45](https://github.com/pboueke/QuaterniTS/blob/main/docs/spec/active/001-adopt-quaternity/decisions.md)
-- [Spec workflow](https://github.com/pboueke/QuaterniTS/blob/main/docs/spec/README.md)
+These detailed reference pages include source-linked examples and the reasoning
+behind ambiguous cases. For a quick introduction to the API, start with
+[Getting started](/QuaterniTS/getting-started/).

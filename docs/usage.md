@@ -1,38 +1,17 @@
 # Usage examples
 
-Runnable examples of the public API. Every TypeScript block below is executed
-against the library by `toolkit/scripts/docs-examples.test.ts` in `make test`, so
-an example that drifts from the real API fails the gate instead of misleading a
-reader. The examples show a **partial** API: this library is not a complete
-engine, and it claims no SAN, FEN or PGN compatibility (spec 001/D4). See
-[`compatibility.md`](compatibility.md) for what is deliberately unsupported.
+Examples of the public API, from opening moves to snapshots and draw offers.
+QuaterniTS does not support SAN, FEN or PGN; see the
+[compatibility guide](compatibility.md) for the nearest alternatives.
 
-## Install and import
+## Install
 
 ```sh
 npm install quaternits
 ```
 
-That registry install applies **only after a deliberate package release**: the
-package is **not published yet**. `package.json` still carries `"private": true`
-as the accidental-publish safeguard, so this command does not resolve today,
-and nothing here asks anyone to publish it (`001/D42`, `001/D43`; see the
-repository's **Publishing** section).
-
-To use the current checkout, build and pack the package locally instead:
-
-```sh
-make build   # emit dist/ (ESM + CJS + declarations)
-npm pack     # pack that same build into an installable tarball
-```
-
-`make consumer-test` builds, packs and installs that tarball in a disposable
-directory and runs Node ESM, CommonJS and TypeScript consumers against it;
-`make integration` runs the installed package through its lifecycle fixtures.
-
-The package ships built ESM and CommonJS entry points plus TypeScript
-declarations and the snapshot JSON Schema; the examples below use the ESM entry
-point.
+The package includes ESM and CommonJS entry points, TypeScript declarations and
+a JSON Schema for its snapshots. The examples below use ESM.
 
 ## Create a game and commit a move
 
@@ -57,8 +36,7 @@ console.log("selection:", event.selection, "awards:", event.awards.length);
 
 A rejected action throws and changes nothing: an illegal move, an unknown square
 or an action after the game is over. A move that a pawn promotes on requires an
-explicit `promotion: "queen" | "rook" | "bishop" | "knight"` choice (spec
-001/D28).
+explicit `promotion: "queen" | "rook" | "bishop" | "knight"` choice.
 
 ## Query attacks and check
 
@@ -79,7 +57,7 @@ console.log(
 
 An attacker record keeps the attacking piece's square, its retained army colour
 and its current controller, and `inCheck(player)` evaluates **every** king that
-player owns (spec 001/D31, 001/D33).
+player owns.
 
 ## End a game administratively
 
@@ -87,7 +65,7 @@ player owns (spec 001/D31, 001/D33).
 import { Quaternity } from "quaternits";
 
 // Freezing every other active controller leaves one active controller, who wins
-// (spec 001/D35, 001/D45). This is an administrative finish, not a mate.
+// This is an administrative finish, not a mate.
 const game = new Quaternity();
 game.recordTimeLoss("red");
 game.resign("black");
@@ -116,7 +94,7 @@ const game = new Quaternity();
 game.move({ from: "b4", to: "c2" });
 
 // snapshot() is the versioned V1 JSON document: the replay origin, the
-// coordinate action log, the event records and the resulting state (001/D10).
+// coordinate action log, the event records and the resulting state.
 const document = game.snapshot();
 
 // loadSnapshot() replays the actions through a fresh instance and adopts the
@@ -138,7 +116,7 @@ game.proposeDraw();
 console.log("offer:", game.pendingDraw());
 
 // The next move expires the offer inside its own single event, so one undo()
-// restores the offer with its recorded votes (spec 001/D45).
+// restores the offer with its recorded votes.
 game.move({ from: "b4", to: "c2" });
 console.log("after the move:", game.pendingDraw());
 
@@ -165,14 +143,14 @@ try {
   console.log("rejected:", error instanceof Error ? error.message : error);
 }
 
-// An unresolved on-turn state (a checked controller with no committable move)
-// fails closed with UnresolvedAdjudicationError instead of an invented outcome.
+// If a checked controller has internal defenses but no safe public move,
+// the unresolved position fails closed instead of inventing an outcome.
 console.log(
   "UnresolvedAdjudicationError is a software error:",
   UnresolvedAdjudicationError.name,
 );
 ```
 
-There is **no established game outcome** for that checked-non-actor edge
-(spec 001/D38–001/D41): the library fails closed, and no mate, pass, draw,
-elimination or award is decided for it.
+There is **no established game outcome** for that checked-non-actor edge. The
+library fails closed, and no mate, pass, draw, elimination or award is decided
+for it.

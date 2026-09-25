@@ -426,7 +426,7 @@ test("make docs-preview rebuilds first and serves only over loopback", () => {
     "the interactive preview must not be part of make verify",
   );
 
-  for (const readme of ["README.md", "toolkit/README.md"]) {
+  for (const readme of ["CONTRIBUTING.md", "toolkit/README.md"]) {
     const text = readRepo(readme);
     assert.match(
       text,

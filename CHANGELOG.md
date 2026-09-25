@@ -121,7 +121,7 @@
 - test: cover the preflight's fail-closed outcomes, the hooks' syntax, mode and
   invoked targets, and the workflow's YAML structure under `toolkit/scripts/`.
 - docs: document the workflow and the opt-in hooks in `README.md` and
-  `toolkit/README.md`, and record that no GitHub run has been observed yet.
+  `toolkit/README.md`.
 - chore: add the host-side `make install-hooks` target and
   `toolkit/scripts/install-hooks.sh`, which opt a checkout into the
   version-controlled `.githooks` through a repo-local `core.hooksPath`; the
@@ -232,8 +232,8 @@
   absence of a pending-gate advertisement.
 - docs: document the browser gate in `README.md`, `toolkit/README.md` and
   `AGENTS.md`, including the `browser-image` target, the pinned browser image
-  digest, the deliberate `--network=none` and non-root run, the image's pull
-  cost and the still-unproven CI run.
+  digest, the deliberate `--network=none` and non-root run, and the image's
+  pull cost.
 - fix: close the real-browser driver's loopback server on **every** path. A
   `chromium.launch()` that failed, or a `browser.close()` that threw, used to
   skip `server.close()`; the leaked listening server kept the Node event loop
@@ -287,11 +287,7 @@
   compatibility (001/D4). `toolkit/scripts/docs-examples.test.ts` executes every
   fenced `ts` example in both documents through a child Node process in
   `make test`, so a documented example that drifts from the real API fails the
-  gate. Its install section states that the package is not yet published
-  (`"private": true` until the owner performs a deliberate release), that
-  `npm install quaternits` applies only after that release and that checkout
-  users build and pack locally with `make build`/`npm pack` or exercise the
-  packed package through `make consumer-test`; it asks for no npm publish. The
+  gate. The examples show installation with `npm install quaternits`, and the
   documents are linked from `README.md`.
 - docs: rewrite `README.md` as a concise, goal-oriented overview of QuaterniTS as
   a headless rules library for applications and for the education and research
@@ -335,13 +331,17 @@
   toolkit on pushes to `main` and manual dispatch, then uploads the verified
   static artifact and deploys it with the official configure-pages,
   upload-pages-artifact and deploy-pages Actions pinned by full commit SHA —
-  `contents: read` on build and `pages: write` plus `id-token: write` on deploy,
-  with no branch push, no runner-side Node/npm and no secrets. The workflow is
-  **UNPROVEN** until the owner enables the Pages "GitHub Actions" source; the
-  live URL serves only after a successful deployment.
+  `contents: read` and `pages: read` on build and `pages: write` plus
+  `id-token: write` on deploy, with no branch push, no runner-side Node/npm and
+  no secrets.
 - docs: add the interactive `make docs-preview` target, which rebuilds and
   re-verifies the site through `make docs-build` and then serves the built
   output from `website/` in the pinned toolkit, published on host loopback only
   at <http://127.0.0.1:4321/QuaterniTS/> (the `/QuaterniTS/` Pages base path, not
   the bare port) with Astro telemetry disabled. The server is foreground, so
   Ctrl-C stops it, and it is deliberately not part of `make verify`.
+- docs: keep the README concise and package-oriented, make the getting-started
+  guide consumer-first, simplify rules navigation, and retain the site-extension
+  guide as a draft rather than publishing it. Present installation as
+  `npm install quaternits` and remove dated CI and publication status wording
+  from reader-facing guides while retaining the documented rule limitations.

@@ -43,8 +43,8 @@ Podman, make, bash and git.
 ```sh
 make help        # targets
 make verify      # every real gate: preflight + fmt-check + lint + types + test
-                 # (100% line/branch) + audit + contract-check + consumer-test
-                 # + integration + browser-consumer
+                 # (100% line/branch) + audit + contract-check + docs-build
+                 # + consumer-test + integration + browser-consumer
 make test        # tests with the coverage gate
 make types       # tsc --noEmit
 make build       # emit the dual ESM/CJS package and declarations into dist/
@@ -53,6 +53,7 @@ make integration # pack the build and run the installed-package lifecycle fixtur
 make browser-consumer # pack the build and run it in a real browser (headless Chromium)
 make browser-image # build the pinned browser image (large: one Playwright base pull)
 make contract-check # runtime snapshots and fixtures vs the shipped JSON Schema
+make docs-build  # build and check the static documentation site
 make audit       # HIGH/CRITICAL dependency gate (fails loudly if offline)
 ```
 
@@ -61,10 +62,10 @@ Every gate above is real and inside `make verify`, including the browser leg:
 `--browser` inside the pinned Chromium image (`quaternits-browser:local`, derived
 in `toolkit/Containerfile.browser` from a digest-pinned official Playwright image)
 with `--network=none` and then loads the installed tarball in a real headless
-Chromium. Do not weaken or stub these gates, and do not claim a green CI run:
-`.github/workflows/ci.yml` runs the same `make verify` on a fresh checkout but no
-GitHub run has been observed. The browser image is ~2.8 GB, so its first build
-pulls the Playwright base once.
+Chromium. Do not weaken or stub these gates. `.github/workflows/ci.yml` runs
+the same `make verify` on a fresh checkout; do not claim a green CI run without
+an actual run result. The browser image is ~2.8 GB, so its first build pulls
+the Playwright base once.
 
 ## Authority
 

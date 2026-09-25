@@ -8,8 +8,8 @@
  * official Pages actions pinned by full commit SHA, with least privilege and no
  * `gh-pages` branch, `git push` or runner-side Node/npm.
  *
- * These checks cannot prove a GitHub run: the workflow is UNPROVEN until the
- * owner enables the Pages "GitHub Actions" source and watches a deployment.
+ * These checks validate workflow structure; deployment results come from
+ * GitHub Actions.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -118,7 +118,9 @@ test("the workflow deploys with the official Pages actions pinned by full SHA", 
   ]) {
     assert.match(
       workflowText,
-      new RegExp(`uses: actions/${action}@[0-9a-f]{40} # v\\d+\\.\\d+\\.\\d+`),
+      new RegExp(
+        `# v\\d+\\.\\d+\\.\\d+\\n\\s+uses: >-\\n\\s+actions/${action}@[0-9a-f]{40}(?:\\n|$)`,
+      ),
       `${action} must be pinned by full commit SHA`,
     );
   }
