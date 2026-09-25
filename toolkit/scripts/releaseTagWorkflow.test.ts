@@ -1,63 +1,162 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as prettier from "prettier";
 
-const TAG_WORKFLOW = fileURLToPath(
+const WORKFLOW = fileURLToPath(
   new URL("../../.github/workflows/release-tag.yml", import.meta.url),
 );
-const CI_WORKFLOW = fileURLToPath(
-  new URL("../../.github/workflows/ci.yml", import.meta.url),
-);
-const tag = readFileSync(TAG_WORKFLOW, "utf8");
-const ci = readFileSync(CI_WORKFLOW, "utf8");
+const workflow = readFileSync(WORKFLOW, "utf8");
 
 test("release tag workflow is valid, repository-formatted YAML", async () => {
-  const config = (await prettier.resolveConfig(TAG_WORKFLOW)) ?? {};
-  assert.equal(await prettier.format(tag, { ...config, parser: "yaml" }), tag);
-});
-
-test("the tag job follows the full CI gate only on main pushes", () => {
-  assert.match(tag, /^on:\n {2}push:\n {4}branches: \[main\]/m);
-  assert.ok(
-    !tag.includes("workflow_run:"),
-    "do not elevate CI artifacts through workflow_run",
-  );
-  assert.match(ci, /^ {2}workflow_call:$/m);
-  assert.match(
-    tag,
-    / {2}verify:\n {4}name: Reuse the full CI gate\n {4}uses: \.\/\.github\/workflows\/ci\.yml/,
-  );
-  assert.match(
-    tag,
-    / {2}tag:\n {4}name: Tag verified merged release\n {4}needs: verify/,
-  );
-  assert.match(ci, /run: make verify/);
-  assert.match(
-    ci,
-    /group: ci-\$\{\{ github\.workflow \}\}-\$\{\{ github\.ref \}\}/,
+  const config = (await prettier.resolveConfig(WORKFLOW)) ?? {};
+  assert.equal(
+    await prettier.format(workflow, { ...config, parser: "yaml" }),
+    workflow,
   );
 });
 
-test("only the tag job may write contents and checkout never persists credentials", () => {
-  assert.match(tag, /^permissions:\n {2}contents: read$/m);
-  assert.match(tag, / {2}tag:[\s\S]*? {4}permissions:\n {6}contents: write/);
-  assert.match(tag, /actions\/checkout@[0-9a-f]{40} # v\d+\.\d+\.\d+/);
-  assert.match(tag, /ref: \$\{\{ github\.sha \}\}/);
-  assert.match(tag, /persist-credentials: false/);
-  assert.match(tag, /CI_SHA: \$\{\{ github\.sha \}\}/);
-  assert.ok(!tag.includes("git push") && !tag.includes("--force"));
+test("main pushes trigger one short host-side tagging job", () => {
+  assert.match(workflow, /^on:\n {2}push:\n {4}branches: \[main\]/m);
+  assert.match(workflow, / {2}tag:\n {4}name: Tag current version/);
+  assert.match(workflow, /runs-on: ubuntu-24\.04/);
+  assert.match(workflow, /timeout-minutes: 5/);
+  for (const forbidden of [
+    "workflow_run:",
+    "pull_request_target:",
+    "make verify",
+    "podman",
+    "setup-node",
+    "npm publish",
+    "secrets.",
+  ]) {
+    assert.ok(!workflow.includes(forbidden), `unexpected ${forbidden}`);
+  }
 });
 
-test("tagging uses the pinned toolkit, GitHub API and merged-PR guard, never npm publish", () => {
-  assert.match(tag, /make preflight toolkit-image/);
-  assert.match(tag, /quaternits-toolkit:local node --input-type=module/);
-  assert.match(tag, /-v "\$PWD":\/work:ro,Z/);
-  assert.match(tag, /createVersionTag\(/);
-  assert.match(tag, /GH_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}/);
-  assert.match(tag, /Authorization: `Bearer \$\{token\}`/);
-  assert.ok(!tag.includes("npm publish"));
-  assert.ok(!tag.includes("setup-node"));
-  assert.ok(!tag.includes("pull_request_target"));
+test("the job uses a pinned checkout and only the repository-write permission", () => {
+  assert.match(workflow, /^permissions:\n {2}contents: write$/m);
+  assert.match(workflow, /actions\/checkout@[0-9a-f]{40} # v\d+\.\d+\.\d+/);
+  assert.match(workflow, /ref: \$\{\{ github\.sha \}\}/);
+  assert.match(workflow, /persist-credentials: true/);
+  assert.ok(!workflow.includes("--force"));
+  assert.ok(!workflow.includes("needs: verify"));
+});
+
+test("the tag is derived from the changelog, checked against the manifest, and never moved", () => {
+  assert.match(workflow, /IFS= read -r heading < CHANGELOG\.md/);
+  assert.match(workflow, /version="\$\{heading#\\#\\# \}"/);
+  assert.match(workflow, /expected=.*version.*\$version/);
+  assert.match(workflow, /Private package: no release tag/);
+  assert.match(workflow, /git rev-parse FETCH_HEAD/);
+  assert.match(workflow, /git ls-remote origin "refs\/tags\/\$tag"/);
+  assert.match(workflow, /already exists; not moving it/);
+  assert.match(workflow, /git tag "\$tag" "\$GITHUB_SHA"/);
+  assert.match(workflow, /git push origin "refs\/tags\/\$tag"/);
+});
+
+const SHA = "a".repeat(40);
+const script = workflow
+  .split("\n")
+  .slice(workflow.split("\n").indexOf("        run: |") + 1)
+  .map((line) => line.replace(/^ {10}/, ""))
+  .join("\n");
+
+function runTag(
+  options: {
+    readonly existing?: boolean;
+    readonly main?: string;
+    readonly private?: boolean;
+    readonly packageVersion?: string;
+  } = {},
+): { status: number | null; stdout: string; stderr: string; calls: string } {
+  const dir = mkdtempSync(path.join(tmpdir(), "quaternits-tag-workflow-"));
+  try {
+    const bin = path.join(dir, "bin");
+    mkdirSync(bin);
+    const calls = path.join(dir, "calls");
+    const executable = path.join(bin, "git");
+    writeFileSync(calls, "");
+    writeFileSync(path.join(dir, "tag.sh"), script);
+    writeFileSync(
+      path.join(dir, "CHANGELOG.md"),
+      "## 0.1.0\n\n- feat: test.\n",
+    );
+    writeFileSync(
+      path.join(dir, "package.json"),
+      `${JSON.stringify({ name: "quaternits", version: options.packageVersion ?? "0.1.0", ...(options.private ? { private: true } : {}), type: "module" }, null, 2)}\n`,
+    );
+    writeFileSync(
+      executable,
+      `#!/bin/bash
+printf '%s\\n' "$*" >> "$QTS_CALLS"
+case "$1 $2" in
+  'fetch --no-tags') ;;
+  'rev-parse FETCH_HEAD') printf '%s\\n' "$QTS_MAIN_SHA" ;;
+  'ls-remote origin') if [[ "$QTS_TAG_EXISTS" == 1 ]]; then printf '%s\\trefs/tags/v0.1.0\\n' "${SHA}"; fi ;;
+  'tag v0.1.0'|'push origin') ;;
+  *) exit 99 ;;
+esac
+`,
+    );
+    chmodSync(executable, 0o755);
+    const result = spawnSync("bash", [path.join(dir, "tag.sh")], {
+      cwd: dir,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        PATH: `${bin}:${process.env.PATH ?? ""}`,
+        GITHUB_SHA: SHA,
+        QTS_MAIN_SHA: options.main ?? SHA,
+        QTS_TAG_EXISTS: options.existing ? "1" : "0",
+        QTS_CALLS: calls,
+      },
+    });
+    return {
+      status: result.status,
+      stdout: String(result.stdout),
+      stderr: String(result.stderr),
+      calls: readFileSync(calls, "utf8"),
+    };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test("the host-side tag script is valid bash and tags direct main pushes", () => {
+  assert.ok(script.startsWith("set -euo pipefail"));
+  const result = runTag();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.calls, /tag v0\.1\.0/);
+  assert.match(result.calls, /push origin refs\/tags\/v0\.1\.0/);
+});
+
+test("existing tag or newer main commit never moves a tag", () => {
+  for (const options of [{ existing: true }, { main: "b".repeat(40) }]) {
+    const result = runTag(options);
+    assert.equal(result.status, 0, result.stderr);
+    assert.ok(!result.calls.includes("tag v0.1.0"));
+    assert.ok(!result.calls.includes("push origin"));
+  }
+});
+
+test("a private or version-drifted package cannot be tagged", () => {
+  const privateRun = runTag({ private: true });
+  assert.equal(privateRun.status, 0, privateRun.stderr);
+  assert.ok(!privateRun.calls.includes("tag v0.1.0"));
+  const drift = runTag({ packageVersion: "0.2.0" });
+  assert.equal(drift.status, 1);
+  assert.match(drift.stderr, /does not match CHANGELOG/);
+  assert.ok(!drift.calls.includes("tag v0.1.0"));
 });
