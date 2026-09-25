@@ -1,0 +1,91 @@
+# On a main push, reuse the full fresh-checkout CI gate before considering a
+# tag. Only a merged PR with a publishable package can create a new tag. Direct
+# pushes, private versions and existing tags cannot create or move a tag.
+# npm publication remains an authenticated owner action.
+name: Tag release version
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-tag-main
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Reuse the full CI gate
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  tag:
+    name: Tag verified merged release
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the verified main commit without credentials
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Install the rootless Podman host prerequisite
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            podman uidmap slirp4netns netavark aardvark-dns
+          runner="$(id -un)"
+          grep -q "^${runner}:" /etc/subuid ||
+            sudo usermod --add-subuids 100000-165535 "${runner}"
+          grep -q "^${runner}:" /etc/subgid ||
+            sudo usermod --add-subgids 100000-165535 "${runner}"
+
+      - name: Build the pinned toolkit
+        run: make preflight toolkit-image
+
+      - name: Create the immutable version tag through the GitHub API
+        env:
+          CI_SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          podman run --rm -i --userns=keep-id:uid=1000,gid=1000 \
+            -v "$PWD":/work:ro,Z -w /work \
+            -e CI_SHA -e GITHUB_REPOSITORY -e GH_TOKEN -e GITHUB_API_URL \
+            quaternits-toolkit:local node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { createVersionTag } from './toolkit/scripts/releaseTag.ts';
+
+          const repo = process.env.GITHUB_REPOSITORY ?? '';
+          const token = process.env.GH_TOKEN;
+          if (!token) throw new Error('release-tag: GitHub token unavailable');
+          const request = async (method, route, body) => {
+            const response = await fetch(
+              `${process.env.GITHUB_API_URL}/repos/${repo}/${route}`,
+              {
+                method,
+                headers: {
+                  Accept: 'application/vnd.github+json',
+                  Authorization: `Bearer ${token}`,
+                  'X-GitHub-Api-Version': '2022-11-28',
+                },
+                body: body === undefined ? undefined : JSON.stringify(body),
+                signal: AbortSignal.timeout(20000),
+              },
+            );
+            return { status: response.status, body: await response.json() };
+          };
+          const outcome = await createVersionTag(
+            process.env.CI_SHA ?? '',
+            repo,
+            readFileSync('package.json', 'utf8'),
+            request,
+          );
+          console.log(`release-tag: ${JSON.stringify(outcome)}`);
+          NODE

@@ -32,7 +32,8 @@ interface Manifest {
   readonly module: string;
   readonly types: string;
   readonly files: readonly string[];
-  readonly private: boolean;
+  readonly private?: boolean;
+  readonly name: string;
   readonly license: string;
   readonly repository: { readonly type: string; readonly url: string };
   readonly publishConfig: { readonly registry: string };
@@ -118,9 +119,10 @@ test("the export map points at the built ESM and CJS entry points", () => {
   assert.equal(pkg.types, "./dist/esm/index.d.ts");
 });
 
-test("the future npmjs release is pinned to this repository while publication stays disabled", () => {
+test("the owner-prepared npmjs release is publishable only to the intended registry", () => {
   assert.deepEqual(pkg.files, ["dist", "schema"]);
-  assert.equal(pkg.private, true);
+  assert.equal(pkg.name, "quaternits");
+  assert.equal(pkg.private, undefined);
   assert.deepEqual(pkg.repository, {
     type: "git",
     url: "https://github.com/pboueke/QuaterniTS.git",

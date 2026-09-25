@@ -15,11 +15,11 @@ clone.
   check so it passes. Fix the cause or stop and report a blocker.
 - **Confirm before destructive actions** (deleting files outside the task,
   removing the toolkit image/cache, force operations).
-- Prepare the MIT-licensed library for open distribution. Keep npm
-  `"private": true` until the owner deliberately prepares a package release;
-  this is an accidental-publish safeguard, **not** a publication-approval gate.
-  The project is unofficial and the license grants no third-party rights
-  (`001/D42`, `001/D43`).
+- Prepare the MIT-licensed library for open distribution. The owner has
+  explicitly authorized removing npm's `"private": true` safeguard for the
+  first release. This **does not authorize agents to publish**; the owner
+  performs the authenticated npm publication. The project is unofficial and
+  the license grants no third-party rights (`001/D42`, `001/D43`).
 - Do not introduce the inherited template product name (the reference
   template's product identifier). It may appear only as quoted provenance inside
   the bootstrap spec.

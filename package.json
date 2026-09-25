@@ -1,7 +1,6 @@
 {
   "name": "quaternits",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "description": "Unofficial, community-driven headless TypeScript rules library for the four-player game Quaternity.",
   "license": "MIT",

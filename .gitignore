@@ -3,6 +3,8 @@ node_modules/
 coverage/
 dist/
 .toolkit/
+# Local npm tarballs are publication candidates, never source-control inputs.
+.release/
 # Docs-site build output, Astro cache and the generated copy of docs/ pages
 website/dist/
 website/.astro/
