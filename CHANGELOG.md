@@ -293,3 +293,55 @@
   users build and pack locally with `make build`/`npm pack` or exercise the
   packed package through `make consumer-test`; it asks for no npm publish. The
   documents are linked from `README.md`.
+- docs: rewrite `README.md` as a concise, goal-oriented overview of QuaterniTS as
+  a headless rules library for applications and for the education and research
+  of the game's rules, add `CONTRIBUTING.md` (rootless Podman/make
+  prerequisites, the never-weakened 100% line/branch coverage gate, the
+  official-source/additive-decision/source-linked-fixture/failing-test-first
+  rule policy and pull-request etiquette), and add line and branch coverage
+  badges that cite the enforced local `make test` gate instead of a CI service.
+  The README keeps the unofficial, non-affiliation and MIT original-work scope,
+  points at `docs/usage.md`, `docs/compatibility.md`, the rules and fixture
+  provenance, the spec, the toolkit, `CONTRIBUTING.md` and the license, states
+  the deliberate limits (no complete engine, no chess.js/FEN/PGN/SAN parity and
+  the `[open]` fail-closed edge) and makes no CI-success claim. Spec 001's
+  opening product goal gains an additive education/research purpose phrase, with
+  no new numbered decision and no rule-policy change; no gameplay code, test,
+  package-publication or toolkit-image change.
+- docs: add a real Astro/Starlight documentation site under `website/` for the
+  `/QuaterniTS/` GitHub Pages base path — a polished homepage plus
+  getting-started, public-API, snapshot, rule/fixture, contributing and
+  extension pages. The canonical `docs/usage.md`, `docs/compatibility.md` and
+  every `docs/rules/*.md` and `docs/fixtures/*.md` page are copied into the site
+  at build time with their cross-links rewritten, so the site carries no
+  hand-maintained, diverging copy and the executable examples keep reading the
+  repository files. The site is a presentation and delivery layer only: it ships
+  no game UI or game logic, claims no complete-engine or notation parity, keeps
+  the unofficial/MIT scope prominent and depends on no CDN or remote runtime
+  asset. A self-contained Astro component with a template, a scoped style and a
+  browser script proves plain HTML/CSS/JS snippets need no React/Vue island.
+- chore: add the `make docs-build` gate — inside the pinned rootless-Podman
+  toolkit it copies the canonical docs into the site, builds the static site and
+  verifies every page path, internal link, asset, `.nojekyll` marker and
+  canonical-source marker under the configured `/QuaterniTS/` base, failing
+  loudly on drift or a broken link. `docs-build` is part of `make verify`, and
+  the generated site output (`website/dist/`, the `website/.astro/` cache and
+  the generated `reference/` pages) is git-ignored, excluded from Prettier and
+  ESLint, and therefore absent from the packed package.
+- chore: pin `astro`, `@astrojs/starlight` and `prettier-plugin-astro` exactly in
+  the root devDependencies and lockfile (single lock, root audit coverage; the
+  fail-closed HIGH/CRITICAL audit gate stays clean) and add
+  `.github/workflows/pages.yml`, which builds the site with the same pinned
+  toolkit on pushes to `main` and manual dispatch, then uploads the verified
+  static artifact and deploys it with the official configure-pages,
+  upload-pages-artifact and deploy-pages Actions pinned by full commit SHA —
+  `contents: read` on build and `pages: write` plus `id-token: write` on deploy,
+  with no branch push, no runner-side Node/npm and no secrets. The workflow is
+  **UNPROVEN** until the owner enables the Pages "GitHub Actions" source; the
+  live URL serves only after a successful deployment.
+- docs: add the interactive `make docs-preview` target, which rebuilds and
+  re-verifies the site through `make docs-build` and then serves the built
+  output from `website/` in the pinned toolkit, published on host loopback only
+  at <http://127.0.0.1:4321/QuaterniTS/> (the `/QuaterniTS/` Pages base path, not
+  the bare port) with Astro telemetry disabled. The server is foreground, so
+  Ctrl-C stops it, and it is deliberately not part of `make verify`.

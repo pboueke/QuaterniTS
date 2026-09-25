@@ -28,6 +28,8 @@ make consumer-test # pack the build and run Node ESM/CJS + TypeScript consumers
 make integration   # pack the build and run the installed-package lifecycle fixture
 make browser-consumer # pack the build and run it in a real browser (headless Chromium)
 make contract-check # check runtime snapshots and fixtures against the JSON Schema
+make docs-build    # copy, build and verify the GitHub Pages docs site
+make docs-preview  # rebuild + serve the docs site at http://127.0.0.1:4321/QuaterniTS/
 make audit         # block on unexcepted HIGH/CRITICAL advisories
 make version-check # CHANGELOG.md version vs package metadata
 make version-sync  # explicit rewrite of version fields; never part of verify
@@ -284,6 +286,42 @@ workflow as YAML during `make fmt-check`, and
 `toolkit/scripts/ciWorkflow.test.ts` pins its structure, but neither executes
 GitHub Actions.
 
+### Docs site build and GitHub Pages
+
+`make docs-build` runs `toolkit/scripts/docs-build.ts` inside the same pinned
+toolkit. It copies the canonical `docs/usage.md`, `docs/compatibility.md`,
+`docs/rules/*.md` and `docs/fixtures/*.md` pages into the Astro/Starlight site
+under `website/src/content/docs/reference/` with their cross-links rewritten to
+the `/QuaterniTS/` routes, runs the real `astro build` into `website/dist`, and
+verifies the output: every expected page path, every internal link and asset
+under the base, a `.nojekyll` marker, the absence of remote/CDN references, and
+a canonical-source marker (source path plus SHA-256) on every copied page. A
+missing page, a broken link, a drifted copy or a remote asset fails the target
+loudly. The generated subtree, `website/dist` and `website/.astro` are
+git-ignored. The target is part of `make verify`.
+
+`.github/workflows/pages.yml` runs on pushes to `main` and manual dispatch. Its
+build job installs the same rootless Podman prerequisite as `ci.yml`, runs
+`make preflight` then `make docs-build`, configures Pages, and uploads
+`website/dist` as the Pages artifact; its deploy job requests only `pages: write`
+and `id-token: write` and deploys with the official `configure-pages`,
+`upload-pages-artifact` and `deploy-pages` Actions pinned by full commit SHA. It
+never pushes to a branch and never runs Node/npm on the runner.
+
+`make docs-preview` is the interactive local view of the same site. It depends
+on the phony `docs-build`, so every run rebuilds and re-verifies the site first,
+then serves the built output in the same pinned toolkit at
+<http://127.0.0.1:4321/QuaterniTS/> — the `/QuaterniTS/` Pages base path, not the
+bare port. The port is published on host loopback only and the server is
+foreground, so Ctrl-C stops it. It is interactive and never part of
+`make verify`.
+
+**Enablement (owner, one-time):** in the repository, open **Settings → Pages →
+Build and deployment** and set **Source** to **GitHub Actions**. The site then
+serves at <https://pboueke.github.io/QuaterniTS/> after a successful deployment.
+No GitHub Pages run has been observed yet, so neither the workflow nor the live
+URL is proven.
+
 ## Honest limits
 
 Every gate of the built-package and snapshot contract now exists and runs in
@@ -304,6 +342,6 @@ the documented `[open]` checked-non-actor edge and is not a complete engine.
 To replace this toolkit, keep the same interface: a root `Makefile` including a
 fragment, one pinned toolkit image plus one pinned browser image, `npm ci` from a
 committed lockfile, and independent
-`fmt-check`/`lint`/`types`/`test`/`build`/`consumer-test`/`integration`/`browser-consumer`/`contract-check`/`audit`/`version-check`
+`fmt-check`/`lint`/`types`/`test`/`build`/`consumer-test`/`integration`/`browser-consumer`/`contract-check`/`docs-build`/`audit`/`version-check`
 targets plus `verify`. Swap the image or tool versions by updating the digests,
 the `playwright-core` pin and `package-lock.json` together.

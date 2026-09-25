@@ -3,3 +3,7 @@ node_modules/
 coverage/
 dist/
 .toolkit/
+# Docs-site build output, Astro cache and the generated copy of docs/ pages
+website/dist/
+website/.astro/
+website/src/content/docs/reference/

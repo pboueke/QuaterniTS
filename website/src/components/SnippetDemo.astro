@@ -1,0 +1,89 @@
+---
+// A tiny, self-contained example of the plain HTML/CSS/JS snippets this site
+// supports **without** a React/Vue island: an Astro component with a template, a
+// scoped `<style>` and a bundled browser `<script>`.
+//
+// It is deliberately not a game UI. It only validates a long-coordinate square
+// against the 12 × 12 file/rank alphabet the library uses, so the example stays
+// presentation-only and contains no game logic.
+interface Props {
+  /** Example squares offered by the input's starting value and datalist. */
+  readonly squares?: readonly string[];
+}
+
+const files = "abcdefghijkl";
+const exampleSquares = Astro.props.squares ?? ["b4", "l12", "a1", "z9"];
+const initial = exampleSquares[0] ?? "a1";
+---
+
+<div class="square-probe" data-quaternits-square-probe>
+  <label for="qts-square">Long-coordinate square</label>
+  <div class="square-probe__row">
+    <input
+      id="qts-square"
+      data-square-input
+      value={initial}
+      autocomplete="off"
+      list="qts-square-examples"
+    />
+    <button type="button" data-square-check>
+      Check
+    </button>
+  </div>
+  <datalist id="qts-square-examples">
+    {exampleSquares.map((square) => (
+      <option value={square} />
+    ))}
+  </datalist>
+  <p class="square-probe__result" role="status" data-square-result>
+    —
+  </p>
+</div>
+
+<style>
+  .square-probe {
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    margin-block: 1rem;
+    padding: 1rem;
+  }
+  .square-probe__row {
+    display: flex;
+    gap: 0.5rem;
+    margin-block: 0.5rem;
+  }
+  .square-probe input {
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-family: var(--sl-font-mono, monospace);
+    width: 8rem;
+  }
+  .square-probe__result {
+    margin-block: 0.5rem 0;
+  }
+</style>
+
+<script>
+  // A plain browser script: no framework, no network. Astro bundles it into the
+  // site's own `_astro/` assets and emits a module `<script>` that loads it.
+  const files = "abcdefghijkl";
+  const root = document.querySelector("[data-quaternits-square-probe]");
+  if (root instanceof HTMLElement) {
+    const input = root.querySelector("[data-square-input]");
+    const result = root.querySelector("[data-square-result]");
+    const check = () => {
+      if (!(input instanceof HTMLInputElement) || !result) return;
+      const value = input.value.trim().toLowerCase();
+      const valid = /^[a-l](1[0-2]|[1-9])$/.test(value);
+      result.textContent = valid
+        ? `${value} is on the board: file ${files.indexOf(value[0]) + 1}, rank ${value.slice(1)}`
+        : `"${value}" is not a long-coordinate square on the 12 × 12 board`;
+    };
+    root.querySelector("[data-square-check]")?.addEventListener("click", check);
+    input?.addEventListener("keydown", (event) => {
+      if (event instanceof KeyboardEvent && event.key === "Enter") check();
+    });
+    check();
+  }
+</script>

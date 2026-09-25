@@ -1,7 +1,8 @@
 # 001 — QuaterniTS rules library
 
 QuaterniTS is an unofficial, community-driven, headless TypeScript library for
-Quaternity. It models the four-player 12 × 12 game; it does not provide a UI, server,
+Quaternity, intended for use in applications and for the education and research of the
+game's rules. It models the four-player 12 × 12 game; it does not provide a UI, server,
 clock, opponent or board renderer. The API may resemble chess.js where useful, but
 chess.js notation, data formats and rules are not compatibility promises. This
 specification describes the intended library and release checks, not features already

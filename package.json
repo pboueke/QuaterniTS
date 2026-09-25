@@ -45,15 +45,19 @@
     "consumer-test": "bash toolkit/scripts/consumer-test.sh",
     "integration": "bash toolkit/scripts/consumer-test.sh --integration",
     "browser-consumer": "bash toolkit/scripts/consumer-test.sh --browser",
-    "contract-check": "node toolkit/scripts/contract-check.ts"
+    "contract-check": "node toolkit/scripts/contract-check.ts",
+    "docs-build": "node toolkit/scripts/docs-build.ts"
   },
   "devDependencies": {
+    "@astrojs/starlight": "0.42.4",
     "@eslint/js": "10.0.1",
     "@types/node": "24.10.1",
     "ajv": "8.20.0",
+    "astro": "7.3.5",
     "eslint": "10.11.0",
     "playwright-core": "1.63.0",
     "prettier": "3.9.9",
+    "prettier-plugin-astro": "1.1.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.1"
   }

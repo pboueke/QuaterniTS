@@ -1,0 +1,94 @@
+---
+title: QuaterniTS
+description: Unofficial, community-driven headless TypeScript rules library for the four-player game Quaternity.
+template: splash
+hero:
+  tagline: A headless TypeScript rules library for the four-player game Quaternity. It models the rules for embedding and for rules research — it is not a UI, server, AI, board renderer or chess.js clone.
+  actions:
+    - text: Getting started
+      link: /QuaterniTS/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: Repository
+      link: https://github.com/pboueke/QuaterniTS
+      icon: github
+      variant: secondary
+---
+
+import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+QuaterniTS is an **unofficial, community-driven** library. It is **not
+affiliated with, sponsored by, or endorsed by** the rights holders of the
+official Quaternity game or project, and it uses no official logos or visual
+assets. Its MIT [`LICENSE`](https://github.com/pboueke/QuaterniTS/blob/main/LICENSE)
+covers this project's original work only — not third-party names, rules text,
+trademarks, artwork or other assets.
+
+<CardGrid>
+  <LinkCard
+    title="Getting started"
+    description="Build the package with the pinned toolkit and commit your first coordinate move."
+    href="/QuaterniTS/getting-started/"
+  />
+  <LinkCard
+    title="Public API"
+    description="The Quaternity class, typed events, queries and the deliberate gaps."
+    href="/QuaterniTS/api/"
+  />
+  <LinkCard
+    title="Rules & fixtures"
+    description="The reviewed opening position and the source-linked expected-outcome tables."
+    href="/QuaterniTS/rules/"
+  />
+  <LinkCard
+    title="Snapshots"
+    description="The versioned V1 JSON persistence document, replay and strict loading."
+    href="/QuaterniTS/snapshots/"
+  />
+</CardGrid>
+
+## What this is
+
+A headless TypeScript library that generates and validates legal moves, holds a
+position and reports game state for the four-player 12 × 12 game. It is intended
+for applications **and** for the education and research of the game's rules.
+
+## What this is not
+
+<Card>
+  <ul>
+    <li>
+      <strong>Not a complete engine.</strong> Only the outcomes the rules
+      authorize are reported, and one provisional rule edge fails closed. Read
+      the <a href="/QuaterniTS/scope/">honest limits</a> before relying on it.
+    </li>
+    <li>
+      <strong>No notation compatibility.</strong> Long coordinates in, typed
+      event records out; there is no FEN, PGN or SAN support in any form (
+      <a href="https://github.com/pboueke/QuaterniTS/blob/main/docs/spec/active/001-adopt-quaternity/decisions.md">
+        001/D4
+      </a>
+      ).
+    </li>
+    <li>
+      <strong>Not a game UI.</strong> This site documents the library; the
+      library ships no board, server, clock, opponent or AI.
+    </li>
+  </ul>
+</Card>
+
+## Honest limits
+
+- **Not a complete engine.** A lone active controller wins, and a
+  two-active-controller stalemate or an accepted draw offer is a draw;
+  everything else stays `in-progress` instead of adjudicating a mate that no
+  action produced.
+- **One provisional rule edge is open.** A checked controller with internal
+  defensive moves but no safe publicly committable move has no official outcome;
+  only that edge fails closed with `UnresolvedAdjudicationError`. See
+  [honest limits](/QuaterniTS/scope/).
+- **The live site activates after a deployment.** This site is published to
+  GitHub Pages by `.github/workflows/pages.yml`; the URL
+  [pboueke.github.io/QuaterniTS](https://pboueke.github.io/QuaterniTS/) only
+  serves content once the owner enables the Pages source and a deployment
+  succeeds.

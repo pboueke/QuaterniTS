@@ -1,0 +1,16 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 32 32"
+  role="img"
+  aria-label="QuaterniTS"
+>
+  <!--
+    Original project mark for the docs site: four quadrant tiles, one per army
+    colour. It uses no official Quaternity logo or artwork.
+  -->
+  <rect width="32" height="32" rx="6" fill="#1f2933" />
+  <rect x="6" y="6" width="9" height="9" rx="2" fill="#f5f5f5" />
+  <rect x="17" y="6" width="9" height="9" rx="2" fill="#c0392b" />
+  <rect x="6" y="17" width="9" height="9" rx="2" fill="#27ae60" />
+  <rect x="17" y="17" width="9" height="9" rx="2" fill="#2b3a42" />
+</svg>

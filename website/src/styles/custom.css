@@ -1,0 +1,27 @@
+/* Site-level presentation tweaks for the QuaterniTS documentation site.
+ *
+ * Starlight ships a complete theme; this file only adds the few hooks the site
+ * needs and stays dependency-free (no web fonts, no CDN imports). */
+:root {
+  --qts-accent: #2b6cb0;
+}
+
+/* The build-time "canonical source" notice on pages copied from `docs/`.
+ * `toolkit/scripts/docs-build.ts` emits the element and the `data-canonical-*`
+ * attributes the docs-build verification step reads back from the built HTML. */
+.canonical-source {
+  border-inline-start: 0.25rem solid var(--sl-color-accent, var(--qts-accent));
+  margin-block: 1rem;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--sl-text-sm);
+  background: var(--sl-color-gray-6);
+  border-radius: 0.25rem;
+}
+
+/* The self-contained extension example (`src/components/SnippetDemo.astro`). */
+.snippet-demo {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+  margin-block: 1rem;
+  padding: 1rem;
+}

@@ -1,302 +1,134 @@
 # QuaterniTS
 
-**QuaterniTS is an unofficial, community-driven headless TypeScript library for
-Quaternity, a four-player chess-inspired game. It is not affiliated with,
-sponsored by, or endorsed by the rights holders of the official Quaternity game
-or project.**
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Line coverage: 100%](https://img.shields.io/badge/lines-100%25-brightgreen)](Makefile)
+[![Branch coverage: 100%](https://img.shields.io/badge/branches-100%25-brightgreen)](Makefile)
 
-The MIT license in [`LICENSE`](LICENSE) covers this project's original work,
-not third-party names, rules text, trademarks, artwork or other assets. This
-repository uses no official logos or visual assets.
+QuaterniTS is an unofficial, community-driven **headless TypeScript rules
+library for Quaternity**, a four-player chess-inspired game. It models the
+12 × 12 board, piece movement, pawn rules, check and mate adjudication and the
+administrative actions, so it can be embedded in applications to
+study, teach and research how the game's rules work.
 
-**Free of charge, no monetization.** As a project intention, QuaterniTS is
-developed and offered free of charge: no advertisements, no paywalls, no paid
-or gated access and no other project monetization. This is an intention about
-this project's own development and distribution, not a license condition or a
-binding commitment, and it promises nothing about a release date. It is
-**not** a restriction on anyone's rights under the MIT license, which permits
-recipients to use, copy, modify, merge, publish, distribute, sublicense and/or
-sell copies of this project's original code. It asserts no right or clearance
-regarding any third-party game name, rules text, trademark, artwork or other
-asset.
+It is **not affiliated with, sponsored by, or endorsed by** the rights holders
+of the official Quaternity game or project, and it uses no official logos or
+visual assets. The MIT [`LICENSE`](LICENSE) covers this project's original work
+only — not third-party names, rules text, trademarks, artwork or other assets.
+QuaterniTS is developed free of charge with no monetization; that is a project
+intention, not a license condition, and it does not limit anyone's MIT rights.
 
 The library is headless: it generates and validates legal moves, holds a
 position and reports game state. It is inspired by chess.js's ergonomic API but
-claims no chess.js, FEN, PGN or SAN compatibility (spec 001/D4). It is not a UI,
-server, AI or board renderer.
+claims **no** chess.js, FEN, PGN or SAN compatibility. It is not a
+UI, server, AI or board renderer.
 
-## What exists today
+## Quick start
 
-Small, independently unit-tested modules plus one bounded public façade over
-them. Each is one slice with its own tests; together they are still not a
-complete engine:
+```ts
+import { Quaternity } from "quaternits";
 
-- `src/board.ts` — the 12×12 coordinate vocabulary: files `a`–`l`, ranks
-  `1`–`12`, army colours and piece types.
-- `src/geometry.ts` — attack squares and pseudo-legal destinations for king,
-  queen, rook, bishop and knight (Phase 2A).
-- `src/pawn.ts` — pawn orientation, ordinary and advanced pawn state, one-square
-  moves, captures, commitment and promotion (Phase 2).
-- `src/position.ts` — the validated four-army position (occupancy, controller
-  mapping, player status, turn) plus pure attack and check queries (Phase 3A).
-  `createPosition` is the single validator authority for a custom position.
-- `src/legalMoves.ts` — legal moves for one controller and pre-adjudication move
-  application (Phase 3B). This is the internal pre-adjudication set used by mate
-  detection, not the public committed move set (spec 001/D38–001/D41).
-- `src/mate.ts` — king-by-king checkmate detection, including hypothetical
-  defenses for a frozen player (Phase 3C).
-- `src/batchAdjudication.ts` — the pure snapshot/batch mate adjudication driver
-  (Phase 3D).
-- `src/assimilation.ts` — the pure assimilation transfer unit (Phase 3D1).
-- `src/turn.ts` — the pure internal turn-order and last-active-winner selector
-  over a caller-supplied status map (spec 001/D35). It skips frozen and
-  eliminated players, returns the sole active controller as the winner and
-  rejects the zero-active state rather than fabricating a draw; it is not the
-  committed turn path.
-- `src/committedMove.ts` — the guarded internal committed-action seam: the
-  public committable set, an atomic commit, the board-less pass, the
-  `resign`/`recordTimeLoss`/`recordWalkover` freeze and the on-turn load bound
-  (spec 001/D38–001/D41 as approved by 001/D44; 001/D45).
-- `src/quaternity.ts` — the bounded public `Quaternity` class: opening or
-  custom position, committable moves, commit/pass, history/undo/reset, draw
-  offers/responses and the three freeze actions (001/D45), the
-  attack/check queries `attackers(square, controller)`,
-  `isAttacked(square, controller)` and `inCheck(player)`, and only the results
-  the rules authorize (spec 001/D25, 001/D35, 001/D45). An attacker record keeps
-  the attacking piece's square, retained army colour and controller, so an
-  assimilated piece attacks for its controller while its army colour stays
-  (001/D33); a frozen controller's pieces exert no attacks but still block
-  sliding rays (001/D26/001/D34), and `inCheck` evaluates every king a controller
-  owns (001/D31) (`docs/rules/multiplayer-adjudication.md` §0/§1/§3). All three
-  queries reject an unknown square or controller instead of answering an
-  implicit no-attack. The class re-validates and isolates any position it is
-  given through `createPosition`, refuses to adopt an already-unresolved one at
-  load (001/D40(3)), hands out frozen copies of its state and history events,
-  and round-trips its whole state through the versioned V1 JSON snapshot below.
-- `src/snapshot.ts` — the versioned V1 JSON snapshot (spec 001/D10): the replay
-  origin, the deterministic coordinate action log, the canonical event records
-  (awards, captures, pawn transitions, promotion choices, turn selections) and
-  the resulting state, plus the strict document parser.
-  `Quaternity.snapshot()` writes it; `Quaternity.loadSnapshot(value)` parses it,
-  re-validates both positions through `createPosition`, **replays the actions
-  through the public API** and adopts the result only when the replayed state and
-  event records agree with the serialized ones, so a serialized result is never
-  trusted as authority. A malformed document, an unsupported version, an unknown
-  key, an invalid position, an illegal or duplicate action, a stale vote and any
-  mismatch are rejected atomically; an unresolved document state fails closed
-  with `UnresolvedAdjudicationError`.
-- `schema/quaternits-snapshot-v1.schema.json` — the strict draft 2020-12 JSON
-  Schema of that document, shipped with the package and exercised by
-  `make contract-check`.
-- `src/index.ts` — the library entry point, re-exporting that class, the
-  `createPosition` validator, the snapshot version and the public types of their
-  surfaces. The build emits it to `dist/esm` and `dist/cjs`, and the
-  `package.json` export map points consumers at those built entry points plus the
-  shipped schema.
-- `src/fixtures/openingPosition.ts` — the reviewed 64-piece opening fixture the
-  tests build on.
+// The default position is the reviewed 64-piece opening; White is on turn.
+const game = new Quaternity();
+console.log("turn:", game.turn());
 
-## What does not exist yet
+// Commit a coordinate move; the event records the next active controller and
+// any mate awards the action produced.
+game.move({ from: "b4", to: "c2" });
+console.log("outcome:", game.outcome().kind);
 
-- No complete engine, and only a **partial** public API. `src/index.ts` exposes
-  the bounded `Quaternity` class and the `createPosition` validator with its
-  `PositionInput`/`PlacedEntry` types, and `package.json` exports the built ESM
-  and CommonJS entry points with their declarations, so the packed package can
-  be consumed as an installed Node library (`make build`, `make consumer-test`).
-  The class reports a result only for the three cases the rules authorize — a
-  lone active controller wins (`001/D35`), a two-active-controller stalemate is
-  a draw (`001/D25`) and a unanimously accepted draw offer is a draw (`001/D45`)
-  — and reports `in-progress` elsewhere instead of adjudicating a mate that no
-  action produced.
-- Every executable gate of the packed-package contract now exists and runs in
-  `make verify`: `make consumer-test` really builds the package, packs it,
-  installs the tarball in a disposable directory and runs Node ESM, Node
-  CommonJS and TypeScript declaration consumers against it, including a snapshot
-  round trip; `make integration` installs the same tarball and plays two compact
-  complete-game lifecycle fixtures against it — a validated custom position
-  (snapshot batch mate, freeze, winner) and an opening-to-terminal
-  **administrative** match from the reviewed opening position (one real committed
-  move per army, then a draw-offer expiry and the three freezes) — covering the
-  snapshot round trip, an atomic invalid load, undo and reset; `make
-contract-check` really compiles the shipped schema
-  and checks runtime snapshots plus committed valid/invalid/drift fixtures; and
-  `make browser-consumer` loads the same installed tarball in a real headless
-  Chromium through an import map in an offline container. Its first run pulls a
-  ~2.8 GB Playwright base image once to build the project-owned
-  `quaternits-browser:local` image.
-- No proven continuous integration: `.github/workflows/ci.yml` runs the same
-  gate on a fresh checkout, but no GitHub run has been observed yet, and the
-  opt-in hooks in `.githooks/` are installed only by the explicit host-side
-  `make install-hooks` target, never automatically.
-- No release automation yet: `CHANGELOG.md` holds `0.1.0` and
-  `make version-check` enforces version drift. The npm `private` flag prevents
-  accidental package publication until the owner deliberately prepares a release
-  (`001/D43`).
-- The checked-non-actor adjudication edge has no established game outcome
-  (`001/D38`–`001/D41`). Its software policy fails closed with
-  `UnresolvedAdjudicationError` for a checked successor or an on-turn empty
-  public set with internal moves; ordinary actor-safety rejections are illegal
-  moves instead. The same on-turn state is rejected **at load**, and no outcome
-  is invented for it. This policy does not complete the engine or authorize an
-  invented game outcome.
-
-## Reviewed rules artifacts
-
-Rules authority is the official basic rules and the official illustrated quick
-rules, in that order; the patent is supporting evidence only and never overrides
-them (spec 001/D2, 001/D9). Ambiguous cases are resolved by appended spec decisions with
-source-linked expected-outcome tables and tests written before the code (001/D11).
-
-- `docs/fixtures/opening-position.md` — the reviewed 64-piece opening fixture
-  and its source/exception table (delegated review, 001/D24).
-- `docs/rules/pawn-vectors.md` — the Phase 2 pawn movement expected-outcome
-  table (owner-delegated policy, 001/D28/001/D29).
-- `docs/rules/multiplayer-adjudication.md` — the Phase 3 adjudication policy
-  table (001/D30–001/D41), including the `[open]` edge above and its fail-closed guard.
-- `docs/rules/administrative-actions.md` — the owner-approved draw-offer expiry
-  and freeze-sequencing table for `proposeDraw`/`respondToDraw` and the three
-  freeze actions (001/D45, §6/§7 of the adjudication table).
-- `docs/fixtures/opening-to-terminal-administrative-match.md` — the executed
-  expected-outcome fixture of one match from the reviewed opening position to a
-  terminal winner (001/D11). It is plainly an **opening-to-terminal
-  administrative match**: real committed moves open, the three 001/D45 freezes
-  end it, and it is **not a proof of opening-to-mate**.
-- `docs/usage.md` — concise runnable examples of the public API, executed as a
-  smoke test by `make test` so they cannot drift from the real API.
-- `docs/compatibility.md` — the chess.js-style compatibility matrix: which calls
-  are equivalent, renamed, partial or deliberately unsupported, with no SAN, FEN
-  or PGN claim (001/D4).
-- `docs/spec/README.md` — the spec workflow.
-- `docs/spec/active/001-adopt-quaternity/spec.md` — the concise library contract;
-  its `decisions.md` records citable `001/D<n>` decisions.
-- `AGENTS.md` — the working rules for this repository.
-- `toolkit/README.md` — the toolchain's purpose, gates and replacement path.
-
-## Toolchain
-
-Every tool command runs inside the digest-pinned Node 24 toolkit image through
-rootless Podman. The host needs only Podman, make, bash and git, and no host
-Node install (spec 001/D5). These targets are the local gate:
-
-```sh
-make help        # list available targets
-make preflight   # fail loudly unless rootless Podman is usable
-make fmt-check   # Prettier check
-make lint        # ESLint
-make types       # tsc --noEmit
-make test        # node --test with the 100% line/branch coverage gate
-make build       # emit the dual ESM/CJS package and declarations into dist/
-make consumer-test # pack the build and run Node ESM/CJS + TypeScript consumers
-make integration # pack the build and run the installed-package lifecycle fixture
-make browser-consumer # pack the build and run it in a real browser (headless Chromium)
-make browser-image # build the pinned browser image (large: one Playwright base pull)
-make contract-check # runtime snapshots and fixtures vs the shipped JSON Schema
-make audit       # block on unexcepted HIGH/CRITICAL npm advisories
-make version-check # CHANGELOG.md version vs package metadata
-make version-sync  # explicit rewrite of package version fields (never in verify)
-make verify      # preflight + fmt-check + lint + types + version-check + test
-                 # + audit + contract-check + consumer-test + integration
-                 # + browser-consumer: every real gate
+// snapshot() is the versioned V1 JSON persistence document (001/D10).
+console.log("snapshot version:", game.snapshot().version);
 ```
 
-`CHANGELOG.md` is the only hand-edited version (spec 001/D7): it holds exact
-`## <semver>` headings with typed semantic bullets (`feat:`, `fix:`, `chore:`,
-`docs:`, …) below them, and its top heading is the version authority.
-`make version-check` fails when the changelog is not in that format, or when
-`package.json` or either version field of `package-lock.json` disagrees with the
-authority; `make version-sync` is the explicit way to update exactly those
-fields. `make verify` never rewrites files.
+The package ships built ESM and CommonJS entry points, TypeScript declarations
+and the snapshot JSON Schema. [`docs/usage.md`](docs/usage.md) exercises the
+full public API, and [`docs/compatibility.md`](docs/compatibility.md) lists what
+is equivalent, renamed, partial or deliberately unsupported.
 
-`make verify` runs every gate that exists, including the packed-package ones:
-preflight, formatting, lint, types, version check, tests with the 100 %
-coverage gate, the dependency audit, `contract-check`, `consumer-test`,
-`integration` and `browser-consumer`. A green `make verify` therefore does imply
-that the packed package really works for Node and browser consumers and that the
-snapshot schema still matches the runtime. `make consumer-test`
-is the real Node half of the built-package consumer test: it builds, packs,
-installs the tarball in a disposable directory and runs Node ESM, Node CommonJS
-and TypeScript declaration consumers, asserting the reviewed opening position, a
-validated custom position, the guarded move seam, a versioned V1 snapshot round
-trip and that no source-only import fallback exists. `make integration` reuses
-that build/pack/install leg (an optional `--integration` argument to the same
-script, so packaging logic exists once) and then runs one compact complete-game
-lifecycle fixture against the installed tarball: a validated four-active custom
-position (`docs/rules/multiplayer-adjudication.md` §4 Fixture 4a) is played into
-one real mate batch that removes two controllers, the next active controller
-loses on time, and the winner, retained armies, controllers, statuses, history
-awards, post-terminal rejection, shipped schema subpath, snapshot round trip,
-atomic invalid load, both `undo()` steps and `reset()` are asserted. It is a
-lifecycle fixture, not a claim that the official opening position can reach that
-custom position. `make contract-check`
-compiles `schema/quaternits-snapshot-v1.schema.json` (draft 2020-12) with the
-pinned `ajv` dev dependency and checks that runtime-built snapshots and the
-committed `toolkit/contract/valid` fixtures are schema-accepted, load and reload
-byte-identically, that every `toolkit/contract/invalid` fixture is rejected by
-both the schema and the loader, and that every `toolkit/contract/drift` fixture
-stays schema-valid while the loader rejects it (the drift sentinel).
-`make browser-consumer` runs the same build/pack/install leg with `--browser`
-inside the pinned browser image and then loads the installed tarball's `dist/esm`
-in a real headless Chromium through an import map, asserting the opening
-position, a committed opening move, the snapshot round trip, the attack/check
-queries and the atomic rejections in a browser; the container has no network, so
-the page can only load the installed package. The leg then runs
-`toolkit/scripts/browser-consumer-failure-probe.sh`, which injects a Chromium
-launch failure and a failing browser close through a disposable temporary
-`playwright-core` override and asserts the driver still exits non-zero within a
-`timeout` bound with a loud failure instead of hanging on a leaked loopback
-server.
+## Install
 
-`make preflight` runs `toolkit/scripts/preflight.sh` and fails loudly when
-`podman` is missing, when `podman info` cannot report a rootless runtime, or
-when Podman is not rootless. It verifies a usable rootless Podman, not that the
-pinned image runs; `make verify` starts with it and then executes the image for
-every gate, so an unusable container runtime stops the gate instead of skipping
-a check.
-
-### Opt-in git hooks
-
-`.githooks/pre-commit` runs `make preflight fmt-check lint types version-check`
-for fast feedback, so changelog/version drift is caught at commit (spec
-001/D19), and `.githooks/pre-push` runs the full `make verify`. They are opt-in
-and installed explicitly from the repository root by a host-side target that
-needs no Podman:
+The npm package id is `quaternits`, but it is **not published yet**.
+[`package.json`](package.json) keeps `"private": true` as an accidental-publish
+safeguard until the owner performs a deliberate release,
+so `npm install quaternits` does not resolve today. Without a host Node install,
+use the toolkit to build and exercise the package against a disposable consumer:
 
 ```sh
-make install-hooks                        # enable (repo-local core.hooksPath)
-git config --local --unset core.hooksPath # disable
+make build           # emit dist/ (ESM + CJS + declarations)
+make consumer-test   # pack the build and run Node ESM/CJS + TypeScript consumers
 ```
 
-`make install-hooks` runs `toolkit/scripts/install-hooks.sh` and sets only the
-repo-local `core.hooksPath` (never global or system). It succeeds when
-`.githooks` is already active, refuses to overwrite a different local hooks
-path, and fails without mutating a directory that is not a Git repository.
+If you do have host Node, you can instead `npm pack` the build yourself; see
+[`docs/usage.md`](docs/usage.md) for both routes.
 
-### Continuous integration (UNPROVEN)
+## Honest limits
 
-`.github/workflows/ci.yml` runs for pull requests and pushes to `main`. It
-checks out a fresh tree, installs only the rootless Podman host prerequisite
-with apt, then runs `make preflight` and `make verify` as the unprivileged
-runner user. It requests `contents: read`, uses no secrets and declares no
-service stack, and it never installs Node or runs npm on the runner: the whole
-toolchain stays inside the digest-pinned images, so CI runs the same gate a
-developer runs. That includes the browser leg, so a fresh runner pulls the
-~2.8 GB Playwright base image once to build `quaternits-browser:local` before
-`browser-consumer` can run.
+- **Not a complete engine.** Only the outcomes the rules authorize are reported:
+  a lone active controller wins, and a two-active-controller stalemate or a
+  unanimously accepted draw offer is a draw. Everything else stays `in-progress`
+  instead of adjudicating a mate that no action produced.
+- **No notation compatibility.** Long coordinates in, typed event records out;
+  no FEN, PGN or SAN (spec 001/D4).
+- **One provisional rule edge is open.** A checked controller that has
+  **internal defensive moves but no safe publicly committable move** has no
+  official outcome; only that edge fails closed with
+  `UnresolvedAdjudicationError` instead of inventing one, while ordinary
+  checkmate (a checked controller with no internal defenses) still applies
+  (`001/D38`–`001/D41`,
+  [`docs/rules/multiplayer-adjudication.md`](docs/rules/multiplayer-adjudication.md)).
 
-**No GitHub run has been observed yet.** The workflow is unproven until the
-owner pushes it and watches a run; a green local `make verify` is not evidence
-of a green CI run, and CI is a backstop rather than a substitute for the local
-gate.
+## Quality gates
 
-## Publishing
+Every tool command runs inside a digest-pinned Node container through rootless
+Podman, so the host needs only Podman, make, bash and git. `make test` enforces
+**100% line and branch coverage** over `src/**` and `toolkit/**` (see
+[`package.json`](package.json)), and the badges above cite that local gate, not
+a CI service or Codecov. `make verify` runs every gate:
 
-QuaterniTS is MIT-licensed and being prepared for open distribution. The npm
-package id is `quaternits`; `package.json` keeps `"private": true` as a safeguard
-against an accidental npm release, not a standing prohibition on publishing the
-repository. The owner will remove that safeguard as part of a deliberate package
-release (`001/D42`, `001/D43`). The library is not yet a complete engine; its
-Node-consumable build, its installed-package lifecycle, its snapshot contract
-and its real-browser leg are proven by
-`make consumer-test`, `make integration`, `make contract-check` and
-`make browser-consumer`, and the CI workflow
-stays unproven until the owner pushes it and watches a run.
+```sh
+make verify  # fmt-check, lint, types, version-check, test (100% coverage),
+             # audit, contract-check, docs-build, consumer-test, integration,
+             # browser leg
+```
+
+That includes a real headless-Chromium leg, whose first run pulls a ~2.8 GB
+Playwright base image once to build the project-owned browser image.
+
+## Documentation site
+
+The browsable documentation is a static [Astro](https://astro.build/) +
+[Starlight](https://starlight.astro.build/) site under [`website/`](website).
+`make docs-build` copies the canonical `docs/` pages into the site with their
+links rewritten, builds it for the `/QuaterniTS/` base path inside the pinned
+toolkit and verifies every page path, internal link, asset and canonical-source
+marker; it is part of `make verify`. The site ships no game logic and no CDN
+dependency.
+
+To view the site locally, run `make docs-preview`. It rebuilds and re-verifies
+the site with `make docs-build` and then serves the built output from a pinned
+toolkit container at **<http://127.0.0.1:4321/QuaterniTS/>** — the `/QuaterniTS/`
+base path, so that URL, not the bare port, is the site. The port is published on
+loopback only and the server is foreground, so **Ctrl-C** stops it. It is
+interactive and deliberately not part of `make verify`.
+
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml) builds the same
+verified artifact on pushes to `main` and manual dispatch, then deploys it with
+the official Pages Actions. The site is published at
+**<https://pboueke.github.io/QuaterniTS/>** — that URL serves content only after
+the owner enables the repository's Pages **GitHub Actions** source
+(**Settings → Pages → Build and deployment → Source: GitHub Actions**) and a
+deployment succeeds. No GitHub Pages run has been observed yet.
+
+## Learn more
+
+- [`docs/usage.md`](docs/usage.md) — runnable public-API examples.
+- [`docs/compatibility.md`](docs/compatibility.md) — chess.js-style matrix and the deliberate gaps.
+- [`docs/fixtures/opening-position.md`](docs/fixtures/opening-position.md) — reviewed opening fixture and its source/exception table.
+- [`docs/rules/`](docs/rules) — rule policy with source-linked expected-outcome fixtures, including the open edge in [`multiplayer-adjudication.md`](docs/rules/multiplayer-adjudication.md).
+- [`docs/spec/README.md`](docs/spec/README.md) and [`spec.md`](docs/spec/active/001-adopt-quaternity/spec.md) — the spec workflow and the active library contract.
+- [`toolkit/README.md`](toolkit/README.md) — the pinned toolchain and every gate target.
+- [`website/`](website) — the Astro/Starlight documentation site ([live](https://pboueke.github.io/QuaterniTS/), once Pages is enabled).
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — prerequisites, rule policy and pull-request etiquette.
+- [`AGENTS.md`](AGENTS.md) — working rules for coding agents.
+- [`LICENSE`](LICENSE) — MIT, covering this project's original work only.
+- **Official rules:** [basic rules](https://www.quaternity.com/play-quaternity) and [illustrated quick rules](https://play.quaternity.com/static/media/quick_start_rules.ee41e5de.pdf); the [patent](https://patents.google.com/patent/US20150352433A1/en) supports them only.

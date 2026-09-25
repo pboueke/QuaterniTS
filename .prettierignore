@@ -4,6 +4,12 @@ coverage/
 # Generated / vendored
 dist/
 package-lock.json
+# Docs-site build output and the generated copy of the canonical docs pages
+website/dist/
+website/.astro/
+website/src/content/docs/reference/
+# Astro copies this empty marker verbatim; Prettier has no parser for it
+website/public/.nojekyll
 
 # Approval artifacts: specs and their append-only decision records are kept
 # byte-stable so review and decision history are not rewritten by tooling.

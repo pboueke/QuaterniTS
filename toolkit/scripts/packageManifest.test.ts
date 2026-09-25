@@ -363,6 +363,83 @@ test("the browser fixtures drive a real Chromium over the installed tarball", ()
   );
 });
 
+test("make docs-preview rebuilds first and serves only over loopback", () => {
+  assert.match(makefileText, /^\.PHONY: docs-preview$/m);
+  const declaration = makefileText
+    .split("\n")
+    .find((line) => line.startsWith("docs-preview:"));
+  assert.ok(
+    declaration !== undefined,
+    "the Makefile must declare docs-preview",
+  );
+  assert.match(
+    declaration,
+    /^docs-preview:.*\bdocs-build\b.*## /,
+    "docs-preview must rebuild and verify the site first, and stay help-listed",
+  );
+  assert.match(
+    declaration,
+    /http:\/\/127\.0\.0\.1:4321\/QuaterniTS\//,
+    "the help text must document the loopback URL under the Pages base",
+  );
+
+  const recipe = recipeFor("docs-preview");
+  assert.ok(
+    recipe.some((line) => line.includes("toolkit-preview")),
+    "docs-preview must serve inside the pinned toolkit image",
+  );
+  assert.ok(
+    recipe.some(
+      (line) =>
+        line.includes("astro.mjs preview") &&
+        line.includes("--host 0.0.0.0 --port 4321"),
+    ),
+    "docs-preview must start the real Astro preview on 0.0.0.0:4321 inside the container",
+  );
+
+  const fragment = readRepo("toolkit/Makefile.fragment");
+  assert.match(
+    fragment,
+    /-p 127\.0\.0\.1:4321:4321/,
+    "the preview must publish the port on host loopback only",
+  );
+  assert.ok(
+    !/-p 0\.0\.0\.0:4321:4321/.test(fragment) && !/-p 4321:4321/.test(fragment),
+    "the preview must never publish the port on every host interface",
+  );
+  assert.match(
+    fragment,
+    /ASTRO_TELEMETRY_DISABLED=1/,
+    "the preview must disable Astro telemetry",
+  );
+  assert.match(
+    fragment,
+    /--init/,
+    "the preview container needs an init so Ctrl-C reaches the server",
+  );
+
+  assert.ok(
+    !makefileText
+      .split("\n")
+      .find((line) => line.startsWith("verify:"))
+      ?.match(/(^|\s)docs-preview(\s|$)/),
+    "the interactive preview must not be part of make verify",
+  );
+
+  for (const readme of ["README.md", "toolkit/README.md"]) {
+    const text = readRepo(readme);
+    assert.match(
+      text,
+      /make docs-preview/,
+      `${readme} must document make docs-preview`,
+    );
+    assert.ok(
+      text.includes("http://127.0.0.1:4321/QuaterniTS/"),
+      `${readme} must document the loopback URL under the Pages base`,
+    );
+  }
+});
+
 test("make verify runs every real gate, including the browser consumer", () => {
   const verify = makefileText
     .split("\n")
@@ -377,6 +454,7 @@ test("make verify runs every real gate, including the browser consumer", () => {
     "test",
     "audit",
     "contract-check",
+    "docs-build",
     "consumer-test",
     "integration",
     "browser-consumer",
@@ -389,6 +467,7 @@ test("make verify runs every real gate, including the browser consumer", () => {
   }
   for (const gate of [
     "contract-check",
+    "docs-build",
     "consumer-test",
     "integration",
     "browser-consumer",

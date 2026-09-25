@@ -71,6 +71,26 @@ browser-consumer: $(TOOLKIT_NPM_CI_STAMP) $(BROWSER_IMAGE_STAMP) ## Pack the bui
 contract-check: $(TOOLKIT_NPM_CI_STAMP) ## Check runtime snapshots and fixtures against the shipped JSON Schema
 	$(call toolkit-run,npm run contract-check)
 
+# The real documentation-site gate: it copies the canonical docs/ pages into the
+# Starlight site with their links rewritten, builds the static site for the
+# /QuaterniTS/ GitHub Pages base path and verifies every page path, internal
+# link, asset and canonical-source marker in the output. `.github/workflows/
+# pages.yml` deploys exactly the `website/dist` this target proves.
+.PHONY: docs-build
+docs-build: $(TOOLKIT_NPM_CI_STAMP) ## Build and verify the GitHub Pages documentation site
+	$(call toolkit-run,npm run docs-build)
+
+# Interactive local preview of the built docs site. It depends on the phony
+# `docs-build`, so every run rebuilds and re-verifies the site before serving
+# it. The `/QuaterniTS/` base path means the site is at
+# http://127.0.0.1:4321/QuaterniTS/, not at the bare port. The port is published
+# on host loopback only and the server is foreground, so Ctrl-C stops it. It is
+# interactive and therefore deliberately not part of `make verify`.
+.PHONY: docs-preview
+docs-preview: docs-build ## Rebuild and serve the docs site at http://127.0.0.1:4321/QuaterniTS/ (Ctrl-C to stop)
+	@printf '%s\n' 'docs-preview: serving the built site at http://127.0.0.1:4321/QuaterniTS/ (press Ctrl-C to stop)'
+	$(call toolkit-preview,node node_modules/astro/bin/astro.mjs preview --root website --host 0.0.0.0 --port 4321 --ignore-lock)
+
 .PHONY: audit
 audit: $(TOOLKIT_NPM_CI_STAMP) ## Block on unexcepted HIGH/CRITICAL advisories
 	$(call toolkit-run,npm run audit)
@@ -92,11 +112,11 @@ install-hooks: ## Opt this checkout into the version-controlled .githooks (repo-
 	bash $(TOOLKIT_DIR)/scripts/install-hooks.sh
 
 .PHONY: verify
-verify: preflight fmt-check lint types version-check test audit contract-check consumer-test integration browser-consumer ## Run every real gate
+verify: preflight fmt-check lint types version-check test audit contract-check docs-build consumer-test integration browser-consumer ## Run every real gate
 
 .PHONY: clean
-clean: ## Remove toolkit stamps, coverage output and build output
-	rm -rf .toolkit coverage dist
+clean: ## Remove toolkit stamps, coverage output, build output and the docs site output
+	rm -rf .toolkit coverage dist website/dist website/.astro website/src/content/docs/reference
 
 .PHONY: clean-all
 clean-all: clean ## Also remove the toolkit, browser and npm cache

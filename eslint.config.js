@@ -5,7 +5,17 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["node_modules/**", "coverage/**", ".toolkit/**", "dist/**"],
+    ignores: [
+      "node_modules/**",
+      "coverage/**",
+      ".toolkit/**",
+      "dist/**",
+      // The docs site's build output, Astro cache and generated copy of the
+      // canonical docs pages are generated artifacts, never linted sources.
+      "website/dist/**",
+      "website/.astro/**",
+      "website/src/content/docs/reference/**",
+    ],
   },
   js.configs.recommended,
   tseslint.configs.recommended,

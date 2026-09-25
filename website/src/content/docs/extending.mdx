@@ -1,0 +1,100 @@
+---
+title: Extending the site
+description: Add documentation pages and plain HTML/CSS/JS snippets without adding a UI framework.
+---
+
+The docs site is a plain [Astro](https://astro.build/) + Starlight project under
+[`website/`](https://github.com/pboueke/QuaterniTS/tree/main/website). It ships
+no React, Vue, Svelte or Solid runtime, and it fetches no assets from a CDN.
+
+## Add a page
+
+Create a Markdown or MDX file under `website/src/content/docs/`. Starlight reads
+its frontmatter `title` and renders it with the standard documentation layout:
+
+```md
+---
+title: My page
+description: One sentence shown in search and previews.
+---
+
+Page content.
+```
+
+Internal links must include the site's base path, `/QuaterniTS/` — for example
+`/QuaterniTS/api/`. `make docs-build` fails when an internal link or asset under
+that base does not resolve in the built output, so a typo is a build failure,
+not a 404 in production.
+
+## Add a plain HTML/CSS/JS snippet
+
+You do not need a UI framework. An `.astro` component is a template plus an
+optional scoped `<style>` and a browser `<script>` that Astro bundles into the
+site's own assets. The example below is exactly that: a self-contained component
+with no dependencies and no game logic.
+
+```astro
+---
+// website/src/components/SquareProbe.astro
+const files = "abcdefghijkl";
+---
+
+<div data-quaternits-square-probe>
+  <input data-square-input value="b4" />
+  <button type="button" data-square-check>
+    Check
+  </button>
+  <p role="status" data-square-result>
+    —
+  </p>
+</div>
+<style>
+  [data-quaternits-square-probe] {
+    border: 1px solid var(--sl-color-gray-5);
+    padding: 1rem;
+  }
+</style>
+<script>
+  const root = document.querySelector("[data-quaternits-square-probe]");
+  // …plain DOM code; Astro bundles it, no framework required.
+</script>
+```
+
+Embed it from an `.mdx` page by importing it:
+
+```mdx
+import SquareProbe from "../../components/SquareProbe.astro";
+
+<SquareProbe />
+```
+
+That is the live component below. It is the site's own copy of that pattern,
+kept intentionally tiny and free of game logic.
+
+import SnippetDemo from "../../components/SnippetDemo.astro";
+
+<SnippetDemo squares={["b4", "l12", "a1", "z9"]} />
+
+## Site styles
+
+Site-wide styles live in `website/src/styles/custom.css`, referenced from
+`website/astro.config.mjs`. Prefer Starlight's CSS custom properties
+(`--sl-color-*`, `--sl-text-*`) over hard-coded values.
+
+## How the site is verified
+
+`make docs-build` runs inside the pinned toolkit and does three things:
+
+1. copies the canonical `docs/` pages into the site with their links rewritten;
+2. builds the static site for the `/QuaterniTS/` base path; and
+3. verifies the built output — every page path, internal link, asset and the
+   canonical-source markers — failing loudly on drift or a broken link.
+
+The same target is part of `make verify`, so a documentation change is verified
+by the standard gate, and `.github/workflows/pages.yml` deploys only after that
+build succeeds.
+
+To view the built site locally, run `make docs-preview`: it rebuilds and
+re-verifies the site and then serves it at
+`http://127.0.0.1:4321/QuaterniTS/` — the `/QuaterniTS/` base path, loopback
+only, with Ctrl-C to stop.

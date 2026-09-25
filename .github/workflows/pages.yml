@@ -1,0 +1,87 @@
+# QuaterniTS documentation deployment to GitHub Pages.
+#
+# The build mirrors ci.yml: the runner installs only the rootless Podman host
+# prerequisite, and every tool command runs inside the digest-pinned toolkit
+# image. The build job runs `make docs-build`, which copies the canonical docs/
+# pages into the Starlight site, builds the static site for the /QuaterniTS/
+# base path and verifies every page, link, asset and canonical-source marker.
+# The deploy job then deploys that verified artifact with the official Pages
+# actions. Nothing here writes to the repository: the artifact is uploaded and
+# deployed through the official Pages actions. Node and npm never run on the
+# runner.
+#
+# UNPROVEN: no GitHub run has been observed. The site serves at
+# https://pboueke.github.io/QuaterniTS/ only after the owner enables the Pages
+# "GitHub Actions" source and a deployment succeeds.
+name: Docs (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege by default; each job requests only what its Pages steps need.
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: make docs-build (pinned rootless Podman toolkit)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # configure-pages reads the Pages site configuration, which on a private
+    # repository needs `pages: read` rather than only `contents: read`
+    # (actions/configure-pages#188: "Resource not accessible by integration").
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Install the rootless Podman host prerequisite
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            podman uidmap slirp4netns netavark aardvark-dns
+          # Rootless Podman needs subordinate id ranges for the runner user.
+          runner="$(id -un)"
+          grep -q "^${runner}:" /etc/subuid ||
+            sudo usermod --add-subuids 100000-165535 "${runner}"
+          grep -q "^${runner}:" /etc/subgid ||
+            sudo usermod --add-subgids 100000-165535 "${runner}"
+
+      - name: Preflight rootless Podman
+        run: make preflight
+
+      - name: Build and verify the docs site
+        run: make docs-build
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload the verified static site
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: website/dist
+
+  deploy:
+    name: Deploy the verified site
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
