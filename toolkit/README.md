@@ -31,8 +31,8 @@ make contract-check # check runtime snapshots and fixtures against the JSON Sche
 make docs-build    # copy, build and verify the GitHub Pages docs site
 make docs-preview  # rebuild + serve the docs site at http://127.0.0.1:4321/QuaterniTS/
 make audit         # block on unexcepted HIGH/CRITICAL advisories
-make version-check # CHANGELOG.md version vs package metadata
-make version-sync  # explicit rewrite of version fields; never part of verify
+make version-check # CHANGELOG.md version vs package metadata and README badge
+make version-sync  # update package, lockfile and README badge; never part of verify
 make verify        # every real gate, browser leg included
 make clean         # remove stamps and coverage output
 make clean-all     # also remove the toolkit/browser images and npm cache volume
@@ -94,10 +94,11 @@ hand-edit a digest; re-resolve it and update the Containerfile, the
   typed semantic bullets (`feat:`, `fix:`, `chore:`, `docs:`, …) with indented
   wrap lines — so a title, subheading, free prose, untyped bullet or annotated
   heading is rejected rather than ignored. `make version-check` fails closed when
-  the changelog is outside that grammar, when `package.json` or either version
-  field of `package-lock.json` disagrees, or when the changelog/package JSON is
-  unusable. `make version-sync` is the explicit, idempotent way to rewrite only
-  those fields from the authority; it is never part of `make verify`, so
+  the changelog is outside that grammar, when `package.json`, either version
+  field of `package-lock.json`, or the README version badge disagrees, or when
+  an input is unusable. `make version-sync` idempotently updates only those
+  fields from the authority; the opt-in pre-commit hook runs it and stops
+  without staging if files change. It is never part of `make verify`, so
   verification never edits files.
 - **Audit** — `toolkit/scripts/audit.ts` runs `npm audit --json` and blocks on
   unexcepted HIGH/CRITICAL advisories. If npm cannot produce a real vulnerability
@@ -256,10 +257,14 @@ reporting a fake result, and the gate targets that follow execute the image.
 
 ## Delivery: opt-in hooks and GitHub Actions
 
-`.githooks/pre-commit` runs `make preflight fmt-check lint types version-check`;
-`.githooks/pre-push` runs the full `make verify`, the same target CI runs. Both
-hooks are opt-in and installed explicitly from the repository root by a
-host-side target that needs no Podman:
+`.githooks/pre-commit` rejects mixed staged/unstaged changelog or generated
+version inputs, runs `make version-sync`, and if it changes `package.json`,
+`package-lock.json` or the README badge, stops and asks you to inspect and
+stage the changes yourself. A clean retry runs
+`make preflight fmt-check lint types version-check`. `.githooks/pre-push`
+runs the full `make verify`, the same target CI runs. Both hooks are opt-in
+and installed explicitly from the repository root by a host-side target
+that needs no Podman:
 
 ```sh
 make install-hooks                        # enable (repo-local core.hooksPath)

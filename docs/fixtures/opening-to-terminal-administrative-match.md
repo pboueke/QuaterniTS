@@ -1,97 +1,62 @@
-# Opening-to-terminal administrative match
+# Example match
 
-Status: **EXECUTED EXPECTED-OUTCOME FIXTURE (spec 001/D11).** This is a `[fixture]`
-record of one small match played from the reviewed official opening position
-(`docs/fixtures/opening-position.md`, spec 001/D9/001/D24) to a terminal winner.
-Every action below was executed against the public `Quaternity` API, and each
-expected outcome was read back from that execution; the coordinate log in §5 is
-the snapshot the engine really writes. It is **not** an official game record: the
-official sources fix the opening position and the rules, not these particular
-moves.
+This example plays four ordinary moves from the [starting
+position](opening-position.md), then ends the match through administrative
+actions. It was executed through the public `Quaternity` API. The game ends
+because White is the only active controller, **not** because a king was
+checkmated. The particular sequence is an example, not an official game record.
 
-**What it is:** an **opening-to-terminal administrative match**. Real public
-committed moves open the game, and the winner is then decided by the
-owner-approved `001/D45` administrative freezes (`resign`, `recordTimeLoss`,
-`recordWalkover`).
+## 1. Sources and notation
 
-**What it is not** (see §6 for the full limitation list): it is **not a proof of
-opening-to-mate**, not a line that assimilates a piece from the opening, and not a
-complete-engine claim. It decides no outcome for the `[open]` checked-non-actor
-edge (`001/D39`–`001/D41`, `001/D44`) and never invents one.
+- [Official basic rules](https://www.quaternity.com/play-quaternity) and
+  [illustrated quick rules](https://play.quaternity.com/static/media/quick_start_rules.ee41e5de.pdf): movement, turn order and frozen armies.
+- [Starting position](opening-position.md): the pictured 64-piece opening.
+- [Draws and other actions](../rules/administrative-actions.md): offer expiry,
+  freezes and undo behavior.
 
-## 1. Sources
+Coordinates use files `a`–`l`, ranks `1`–`12` and long `from`–`to` notation.
+The library does not interpret SAN, FEN or PGN. The moves below involve
+knights and one king; they do not exercise pawn promotion or assimilation.
 
-| Source                                 | URL                                                                       | Role                                                         |
-| -------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Official basic rules / play page       | <https://www.quaternity.com/play-quaternity>                              | Rules authority (spec)                                       |
-| Official illustrated quick rules (PDF) | <https://play.quaternity.com/static/media/quick_start_rules.ee41e5de.pdf> | Move, turn-order and freeze rules text                       |
-| Opening position fixture               | `docs/fixtures/opening-position.md`                                       | The reviewed 64-piece starting position (001/D9, 001/D24)    |
-| Administrative action sequencing       | `docs/rules/administrative-actions.md`                                    | `001/D45` freeze and draw-offer-sequencing expected outcomes |
-| Adopt spec decisions                   | `docs/spec/active/001-adopt-quaternity/decisions.md`                      | 001/D9, 001/D11, 001/D34, 001/D35, 001/D45                   |
-| Executable twin                        | `src/quaternity.test.ts`                                                  | The tests that play this match and assert §3–§5              |
+## 2. Starting context
 
-## 2. Conventions and starting position
+Start with White on turn and all four controllers active. The next active
+controller is selected clockwise: White → Red → Black → Green.
 
-- Board: files `a`–`l` (left to right), ranks `1`–`12` (bottom to top), `a1` at
-  White's pictured bottom-left corner. All coordinates are long coordinates
-  (`from`–`to`); this library has no SAN, FEN or PGN notation (spec 001/D4).
-- The start is the reviewed opening fixture: 64 pieces, four active controllers,
-  White on turn, turn order `White → Red → Black → Green`.
-- Pieces moved below: White `b4` knight and `a1` king, Red `d11` knight, Black
-  `j9` knight, Green `i2` knight. Each is a pawn-free orthodox move, so no pawn
-  direction, commitment or promotion rule is exercised here (see §6).
-- `[official]` is stated or summarized by the sources above, or fixed by spec 001
-  and 001/D25/001/D35. `[policy]` is the owner-approved `001/D45` software
-  inference. `[fixture]` is this particular choice of moves, which no official
-  source names.
+## 3. Actions
 
-## 3. Action table
+| #   | Player | Public action             | Expected after | Notes                      |
+| --- | ------ | ------------------------- | -------------- | -------------------------- |
+| 1   | White  | commit `b4–c2` (knight)   | next: Red      |                            |
+| 2   | Red    | commit `d11–b10` (knight) | next: Black    |                            |
+| 3   | Black  | commit `j9–l10` (knight)  | next: Green    |                            |
+| 4   | Green  | commit `i2–g3` (knight)   | next: White    |                            |
+| 5   | White  | `proposeDraw()`           | offer pending  | White stays on turn        |
+| 6   | White  | commit `a1–a2` (king)     | next: Red      | Offer expires in this move |
+| 7   | Red    | `recordTimeLoss(red)`     | next: Black    | Freeze: `time-loss red`    |
+| 8   | Black  | `resign(black)`           | next: Green    | Freeze: `resign black`     |
+| 9   | Green  | `recordWalkover(green)`   | winner: White  | Freeze: `walkover green`   |
 
-Nine actions in order. "Expected after" is the recorded turn selection (the next
-active controller, or the lone active winner), read back from the engine.
+No action captures a piece or produces a mate award, so each recorded
+`awards` list is empty. The freezes do not trigger a mate or assimilation
+batch and leave all four kings on the board.
 
-| #   | Player on turn | Public action             | Expected after                         | Tag                                            |
-| --- | -------------- | ------------------------- | -------------------------------------- | ---------------------------------------------- |
-| 1   | White          | commit `b4–c2` (knight)   | next: Red                              | `[fixture]` move; `[official]` knight geometry |
-| 2   | Red            | commit `d11–b10` (knight) | next: Black                            | `[fixture]` move; `[official]` knight geometry |
-| 3   | Black          | commit `j9–l10` (knight)  | next: Green                            | `[fixture]` move; `[official]` knight geometry |
-| 4   | Green          | commit `i2–g3` (knight)   | next: White                            | `[fixture]` move; `[official]` knight geometry |
-| 5   | White          | `proposeDraw()`           | offer pending, turn stays White        | `[official]` proposal §6; `[policy]` 001/D45   |
-| 6   | White          | commit `a1–a2` (king)     | next: Red, offer expired in this event | `[policy]` 001/D45 expiry; §1 O1               |
-| 7   | Red            | `recordTimeLoss(red)`     | next: Black                            | `[policy]` 001/D45 freeze                      |
-| 8   | Black          | `resign(black)`           | next: Green                            | `[policy]` 001/D45 freeze                      |
-| 9   | Green          | `recordWalkover(green)`   | winner: White                          | `[policy]` 001/D45, 001/D35 lone active winner |
+## 4. Final state
 
-No action in the match produces a mate award, a capture or a pawn transition, so
-every recorded `awards` list is empty and the board never loses a piece.
+- `outcome()` is `{ kind: "winner", winner: "white" }` because White is the
+  only active controller; Red, Black and Green are frozen.
+- The board still has 64 pieces. Its kings are at `a2` (White), `a12` (Red),
+  `l12` (Black) and `l1` (Green).
+- `turn()` remains `white`. History kinds are `move`, `move`, `move`, `move`,
+  `draw-proposal`, `move`, `freeze`, `freeze`, `freeze`.
+- A new move or administrative action after the terminal result is rejected
+  without changing state. `undo()` and `reset()` remain available.
 
-## 4. Expected terminal state
+## 5. History, undo and snapshot
 
-- `outcome()` is `{ kind: "winner", winner: "white" }`: White is the **lone
-  active controller** (`001/D35`, §7 Fixture 7), not a mate.
-- Statuses: `white: "active"`, `red: "frozen"`, `black: "frozen"`,
-  `green: "frozen"`. The freezes apply **no** mate/assimilation batch, so the
-  frozen kings stay on their squares.
-- The board still holds 64 pieces, and the four kings are on `a2` (White, after
-  action 6), `a12` (Red), `l12` (Black) and `l1` (Green).
-- `turn()` is `white` (the winner's seat) and the recorded history kinds are
-  `move`, `move`, `move`, `move`, `draw-proposal`, `move`, `freeze`, `freeze`,
-  `freeze`.
-- Every board or administrative action after this terminal state is rejected
-  atomically: `move`, `pass`, `moves`, `proposeDraw`, `respondToDraw`, `resign`,
-  `recordTimeLoss` and `recordWalkover` all throw and change nothing
-  (`001/D35`, `001/D45`). `undo()` and `reset()` still work.
-
-## 5. Recorded events, undo and snapshot
-
-- The three freezes are logged as `time-loss red`, `resign black` and
-  `walkover green`; the proposal is logged as `proposeDraw()`, and the moves as
-  the coordinate pairs above.
-- The pending offer from action 5 **expires inside** action 6's single move
-  event, so one `undo()` of that move restores the offer with its recorded votes
-  (none: the other players never voted; `001/D45` §1 O1).
-- The V1 snapshot (`001/D10`) of the terminal match replays into a fresh
-  instance and yields the same state, event records and action log:
+The pending offer expires as part of action 6's single move event. Undoing
+that event restores the offer and any votes already recorded. The versioned
+snapshot replays the following action log into a fresh instance:
 
 ```json
 [
@@ -107,27 +72,12 @@ every recorded `awards` list is empty and the board never loses a piece.
 ]
 ```
 
-- One `undo()` per event reverses, in order: the Green walkover, the Black
-  resignation, the Red time loss, the `a1–a2` move (which restores the pending
-  offer), the proposal, and finally the four committed moves.
-- `reset()` restores the reviewed opening position and clears the log.
+One `undo()` per event reverses the three freezes, the `a1–a2` move (restoring
+the pending offer), the proposal and then the first four moves. `reset()`
+restores the starting position and clears the history.
 
-## 6. Limits and provenance
-
-- **Administrative, not a mate.** The match ends because three controllers were
-  frozen by `001/D45` actions. It is therefore evidence for the completion
-  criterion "a full-match test" only in the narrow, labelled sense of an
-  opening-to-terminal **administrative** match. It is **not a proof of
-  opening-to-mate**, and it is not evidence that a mate, an assimilation cascade
-  or a promotion is reachable from the official opening.
-- **No outcome for the `[open]` edge.** Nothing here exercises or decides the
-  checked-non-actor edge (`001/D39`–`001/D41`, `001/D44`); `UnresolvedAdjudicationError`
-  remains a software error and never a game outcome, and this fixture asserts no
-  such outcome.
-- **No notation compatibility.** The coordinates are this library's own long
-  coordinates; no SAN, FEN or PGN claim is made or implied (`001/D4`).
-- **No complete-engine claim.** The engine, public API and game-rule coverage
-  claims stay withheld; this fixture proves one executed match, nothing more.
-- The moves were selected as _legal, committable, non-capturing_ moves and each
-  was re-checked against the real engine. No move needed to be replaced, no
-  engine code was added for this fixture, and no guard was bypassed.
+This match demonstrates an **administrative finish**, not an opening-to-mate
+line or proof that assimilation and promotion are reachable from the opening.
+It does not settle the [unresolved checked-controller
+position](../rules/d38-coordinate-search.md); the library never invents a
+game outcome for that edge.

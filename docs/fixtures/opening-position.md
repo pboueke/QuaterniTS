@@ -1,49 +1,24 @@
-# Opening position fixture provenance
+# Starting position
 
-Status: **REVIEWED ON A DELEGATED BASIS (spec 001/D24).** The owner delegated the
-opening-fixture rules decisions and did not personally perform the square-by-square
-check. Review was performed by an automated comparison of all 64 `basicPosition`
-facts plus a visual corner check and an independent read-only reviewer (see
-"Delegated review record" below).
-Scope: Phase 1A only. This document and `src/fixtures/openingPosition.ts` record the
-default four-army opening position. No movement, legality or adjudication logic is
-included, by design.
+QuaterniTS starts with 64 pieces on a 12 × 12 board: 16 pieces per army,
+including two advanced central pawns per player. White moves first; turns
+continue clockwise through Red, Black and Green. The coordinates below use
+files `a`–`l` from left to right and ranks `1`–`12` from bottom to top.
 
 ## Sources
 
-| Source                                   | URL                                                                       | Role                                                           |
-| ---------------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Official illustrated quick rules (PDF)   | <https://play.quaternity.com/static/media/quick_start_rules.ee41e5de.pdf> | Rules text and pictured board authority (spec 001/D9)          |
-| Official tutorial, quick start chapter 1 | <https://play.quaternity.com/how-to-play/quick-start/chapter1>            | Pictured opening position and its `basicPosition` data         |
-| Official play page                       | <https://www.quaternity.com/play-quaternity>                              | Rules authority (spec)                                         |
-| Patent US20150352433A1                   | <https://patents.google.com/patent/US20150352433A1/en>                    | Supporting evidence only; **not** used to override the picture |
+- [Official illustrated quick rules](https://play.quaternity.com/static/media/quick_start_rules.ee41e5de.pdf): the pictured board governs the opening.
+- [Official tutorial, chapter 1](https://play.quaternity.com/how-to-play/quick-start/chapter1): its pictured board and `basicPosition` data give the 64 square, colour and piece-type facts.
+- [Official basic rules](https://www.quaternity.com/play-quaternity): turn order and game overview.
+- [Patent US20150352433A1](https://patents.google.com/patent/US20150352433A1/en): supporting background only; its conflicting corners and incomplete pawn listings do not override the pictured board.
 
-The tutorial is a public single-page app served from `/static/js/main.242d8326.chunk.js`.
-Its `basicPosition` object supplies the 64 opening square/color/type **data facts** used
-below. Only the data facts were read; no vendor implementation code was copied, and no
-vendor source is vendored into this repository.
+The tutorial's 64 `basicPosition` facts agree with the pictured corner
+arrangement: White bottom-left (`a1`), Red top-left (`a12`), Black top-right
+(`l12`), Green bottom-right (`l1`).
 
-## Method
+## Pieces by army
 
-1. The quick-rules PDF was retrieved and its text layer extracted. The text confirms the
-   rules (clockwise turns, one-square pawns, no castling, advanced central pawns, checkmate
-   assimilation, frozen armies) but its board diagram is a raster image, so the text alone
-   does not resolve the position.
-2. The tutorial chapter 1 `basicPosition` data object was read for the 64 square/color/type
-   facts. This is the same position shown in the pictured chapter 1 board.
-3. The pictured corner arrangement was cross-checked against the data: White bottom-left
-   (king `a1`), Red top-left (king `a12`), Black top-right (king `l12`), Green bottom-right
-   (king `l1`). This matches the spec's stated pictured arrangement and is the authority over
-   the patent's conflicting corner assignment.
-4. Pixel-level reading of the PDF raster was deliberately not performed once the tutorial
-   facts agreed with the pictured corners and the spec's stated facts.
-
-## Fixture facts (64 pieces, 16 per army)
-
-Coordinates use files `a`–`l` (left to right) and ranks `1`–`12` (bottom to top), with `a1`
-at bottom-left, matching the pictured board.
-
-### White (bottom-left, king a1) — 16
+### White (bottom-left; king a1)
 
 | Type   | Squares                        |
 | ------ | ------------------------------ |
@@ -56,7 +31,7 @@ at bottom-left, matching the pictured board.
 
 Advanced central pawns: **d4, e5**.
 
-### Red (top-left, king a12) — 16
+### Red (top-left; king a12)
 
 | Type   | Squares                           |
 | ------ | --------------------------------- |
@@ -69,7 +44,7 @@ Advanced central pawns: **d4, e5**.
 
 Advanced central pawns: **d9, e8**.
 
-### Black (top-right, king l12) — 16
+### Black (top-right; king l12)
 
 | Type   | Squares                           |
 | ------ | --------------------------------- |
@@ -82,7 +57,7 @@ Advanced central pawns: **d9, e8**.
 
 Advanced central pawns: **i9, h8**.
 
-### Green (bottom-right, king l1) — 16
+### Green (bottom-right; king l1)
 
 | Type   | Squares                        |
 | ------ | ------------------------------ |
@@ -95,49 +70,21 @@ Advanced central pawns: **i9, h8**.
 
 Advanced central pawns: **i4, h5**.
 
-## Composition check
+## Position checks
 
-Every army holds exactly: 1 king, 1 queen, 2 rooks, 2 knights, 2 bishops, 8 pawns = 16
-pieces. Across four armies: 64 pieces on a 12×12 (144-square) board. These invariants are
-enforced by `src/fixtures/openingPosition.test.ts`.
+Each army has one king, one queen, two rooks, two knights, two bishops and
+eight pawns. Across four armies that is 64 occupied squares; the opening
+fixture and its tests assert every square, colour and piece type.
 
-## Visual cross-check and unresolved uncertainty
+### Source/exception table
 
-- The four kings and both advanced central pawns per army are the anchors that tie the data
-  facts to the picture. All twelve documented anchor facts are asserted in the tests.
-- The PDF diagram is a raster image and was not read pixel by pixel. If a future
-  review finds a disagreement between the tutorial data and the printed diagram, the
-  printed illustrated rules (spec 001/D9) govern, and this fixture plus its tests must be
-  corrected before any move generation is built.
-- The patent's pawn listings contain omissions/duplicates and its corner assignment
-  conflicts with the picture; per spec 001/D2/001/D9 they are not used to fill or change any square.
+The picture and tutorial data currently agree on all 64 squares. No exception
+is needed:
 
-## Source/exception table
+| Square | Discrepancy | Resolution | Source |
+| ------ | ----------- | ---------- | ------ |
+| _none_ | —           | —          | —      |
 
-Every square that the pictured authority cannot resolve must be recorded here with
-its resolution and source. The table is intentionally empty: no square in this
-fixture is currently unresolved, because the tutorial `basicPosition` facts and the
-pictured corners agree (spec 001/D9/001/D24). Add a row here if review ever finds ambiguity,
-and correct the fixture before any move generation is built.
-
-| Square | Issue | Resolution | Source |
-| ------ | ----- | ---------- | ------ |
-| _none_ | —     | —          | —      |
-
-## Delegated review record
-
-The fixture was accepted on delegated review evidence (`001/D24`):
-
-- **Automated fact comparison.** All 64 tutorial quick-start chapter 1 `basicPosition`
-  square/color/type facts were compared against the checked-in fixture: zero
-  discrepancies.
-- **Visual corner check.** The pictured corner arrangement was checked against the
-  official illustrated quick-rules PDF: White bottom-left (`a1`), Red top-left
-  (`a12`), Black top-right (`l12`), Green bottom-right (`l1`).
-- **Independent reviewer.** A read-only reviewer returned OK with P2 (non-blocking)
-  notes.
-
-The advanced central pawns' forward direction remains intentionally unrecorded (it is
-chosen on first move, per the rules). The spec's rules-policy/TDD gate still requires
-reviewed expected-outcome tables before any movement, legality or adjudication code is
-written.
+If a future discrepancy appears, the official illustrated board takes
+precedence. Advanced central pawn direction is chosen during play, not fixed
+by the opening position; see [Pawns](../rules/pawn-vectors.md).

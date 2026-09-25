@@ -6,11 +6,11 @@
  * `## <semver>` headings and typed semantic bullets (with indented wrap lines)
  * below them — so a title, subheading, free prose, untyped bullet or annotated
  * heading is rejected instead of being silently ignored. `--check` (the
- * default, run by `make version-check`) fails closed when `package.json` or
- * either version field of `package-lock.json` disagrees with the authority.
- * `--sync` (run explicitly by `make version-sync`, never by `make verify`)
- * rewrites exactly those three fields from the authority and touches nothing
- * else, so `private`, `license` and unrelated lock metadata stay untouched.
+ * default, run by `make version-check`) fails closed when `package.json`,
+ * either lockfile version or the README badge disagrees with the authority.
+ * `--sync` (run by the opt-in pre-commit hook or explicit `make version-sync`,
+ * never by `make verify`) rewrites only those fields and the managed badge;
+ * `private`, `license` and unrelated content remain untouched.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -218,6 +218,74 @@ export interface VersionDrift {
   readonly actual: string;
 }
 
+/** The static badge is derived from the changelog, never from the npm registry. */
+function versionBadge(authority: string): string {
+  return `[![Version: ${authority}](https://img.shields.io/static/v1?label=version&message=${encodeURIComponent(authority)}&color=blue)](CHANGELOG.md)`;
+}
+
+function existingBadge(readmeText: string): string | undefined {
+  const lines = readmeText
+    .split("\n")
+    .filter((line) => line.startsWith("[![Version: "));
+  if (lines.length > 1) {
+    throw new VersionError("README.md has multiple version badges");
+  }
+  return lines[0];
+}
+
+/** A missing, stale or malformed README version badge fails the read-only gate. */
+export function readmeBadgeDrift(
+  authority: string,
+  readmeText: string,
+): VersionDrift[] {
+  const current = existingBadge(readmeText);
+  if (current === versionBadge(authority)) {
+    return [];
+  }
+  const parsed =
+    current === undefined
+      ? null
+      : /^\[!\[Version: ([^\]]+)\]\(https:\/\/img\.shields\.io\/static\/v1\?label=version&message=([^&)]+)&color=blue\)\]\(CHANGELOG\.md\)$/.exec(
+          current,
+        );
+  const matchedVersion = parsed?.[1];
+  const matchedMessage = parsed?.[2];
+  let actual: string;
+  if (current === undefined) {
+    actual = "(missing)";
+  } else if (
+    matchedVersion !== undefined &&
+    matchedMessage === encodeURIComponent(matchedVersion)
+  ) {
+    actual = matchedVersion;
+  } else {
+    actual = "(malformed)";
+  }
+  return [{ source: "README.md version badge", expected: authority, actual }];
+}
+
+/** Update only the managed badge; insert it below the project heading once. */
+export function synchronizeReadmeBadge(
+  authority: string,
+  readmeText: string,
+): string {
+  const current = existingBadge(readmeText);
+  const replacement = versionBadge(authority);
+  if (current !== undefined) {
+    return readmeText
+      .split("\n")
+      .map((line) => (line === current ? replacement : line))
+      .join("\n");
+  }
+  if (!readmeText.startsWith("# QuaterniTS\n\n")) {
+    throw new VersionError("README.md must start with # QuaterniTS");
+  }
+  return readmeText.replace(
+    "# QuaterniTS\n\n",
+    `# QuaterniTS\n\n${replacement}\n`,
+  );
+}
+
 /** Every version field that disagrees with the changelog authority. */
 export function versionDrift(
   authority: string,
@@ -291,6 +359,7 @@ export interface VersionTargets {
   readonly changelog: string;
   readonly package: string;
   readonly lock: string;
+  readonly readme: string;
 }
 
 /** Repository files whose versions the changelog authority governs. */
@@ -298,12 +367,14 @@ export const DEFAULT_TARGETS: VersionTargets = {
   changelog: fileURLToPath(new URL("../../CHANGELOG.md", import.meta.url)),
   package: fileURLToPath(new URL("../../package.json", import.meta.url)),
   lock: fileURLToPath(new URL("../../package-lock.json", import.meta.url)),
+  readme: fileURLToPath(new URL("../../README.md", import.meta.url)),
 };
 
 const PATH_FLAGS: Readonly<Record<string, keyof VersionTargets>> = {
   "--changelog": "changelog",
   "--package": "package",
   "--lock": "lock",
+  "--readme": "readme",
 };
 
 export interface VersionDeps {
@@ -325,7 +396,12 @@ export function defaultDeps(): VersionDeps {
 
 /** Entry point; returns the process exit code. */
 export function main(argv: readonly string[], deps: VersionDeps): number {
-  const targets: { changelog: string; package: string; lock: string } = {
+  const targets: {
+    changelog: string;
+    package: string;
+    lock: string;
+    readme: string;
+  } = {
     ...DEFAULT_TARGETS,
   };
   let sync = false;
@@ -356,8 +432,11 @@ export function main(argv: readonly string[], deps: VersionDeps): number {
     const authority = changelogVersion(deps.readText(targets.changelog));
     const packageText = deps.readText(targets.package);
     const lockText = deps.readText(targets.lock);
+    const readmeText = deps.readText(targets.readme);
     if (sync) {
+      // Validate every input before writing any of the generated files.
       const synced = synchronizeVersions(authority, packageText, lockText);
+      const syncedReadme = synchronizeReadmeBadge(authority, readmeText);
       let changed = 0;
       if (synced.package !== packageText) {
         deps.writeText(targets.package, synced.package);
@@ -365,6 +444,10 @@ export function main(argv: readonly string[], deps: VersionDeps): number {
       }
       if (synced.lock !== lockText) {
         deps.writeText(targets.lock, synced.lock);
+        changed += 1;
+      }
+      if (syncedReadme !== readmeText) {
+        deps.writeText(targets.readme, syncedReadme);
         changed += 1;
       }
       if (changed === 0) {
@@ -376,7 +459,10 @@ export function main(argv: readonly string[], deps: VersionDeps): number {
       );
       return 0;
     }
-    const drift = versionDrift(authority, packageText, lockText);
+    const drift = [
+      ...versionDrift(authority, packageText, lockText),
+      ...readmeBadgeDrift(authority, readmeText),
+    ];
     for (const item of drift) {
       deps.error(
         `version: ${item.source} is ${item.actual}, expected ${item.expected}`,
@@ -389,7 +475,7 @@ export function main(argv: readonly string[], deps: VersionDeps): number {
       return 1;
     }
     deps.log(
-      `version: CHANGELOG.md ${authority} matches package.json and package-lock.json`,
+      `version: CHANGELOG.md ${authority} matches package.json, package-lock.json and README.md`,
     );
     return 0;
   } catch (error) {

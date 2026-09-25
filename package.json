@@ -5,6 +5,13 @@
   "type": "module",
   "description": "Unofficial, community-driven headless TypeScript rules library for the four-player game Quaternity.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pboueke/QuaterniTS.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
   "engines": {
     "node": ">=24"
   },

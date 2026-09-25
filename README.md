@@ -1,5 +1,6 @@
 # QuaterniTS
 
+[![Version: 0.1.0](https://img.shields.io/static/v1?label=version&message=0.1.0&color=blue)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Line coverage: 100%](https://img.shields.io/badge/lines-100%25-brightgreen)](Makefile)
 [![Branch coverage: 100%](https://img.shields.io/badge/branches-100%25-brightgreen)](Makefile)
@@ -26,7 +27,7 @@ npm install quaternits
 ```ts
 import { Quaternity } from "quaternits";
 
-const game = new Quaternity(); // Reviewed 64-piece opening; White moves first.
+const game = new Quaternity(); // 64-piece starting position; White moves first.
 console.log(game.turn(), game.moves());
 
 const event = game.move({ from: "b4", to: "c2" });
@@ -40,12 +41,14 @@ restored.loadSnapshot(saved);
 The package provides typed moves, attack and check queries, draw and
 administrative actions, history, undo, and versioned snapshots. Its API is
 inspired by chess.js where useful but does **not** support chess.js notation or
-formats such as SAN, FEN or PGN.
+formats such as SAN, FEN or PGN. Where an official game outcome is unknown,
+the library fails closed with `UnresolvedAdjudicationError` rather than inventing
+a result; see its [bounded rules scope](https://pboueke.github.io/QuaterniTS/scope/).
 
 ## Links
 
 - [Getting started](https://pboueke.github.io/QuaterniTS/getting-started/) and [public API](https://pboueke.github.io/QuaterniTS/api/)
 - [Usage examples](https://pboueke.github.io/QuaterniTS/reference/usage/) and [compatibility guide](https://pboueke.github.io/QuaterniTS/reference/compatibility/)
-- [Rules and fixtures](https://pboueke.github.io/QuaterniTS/rules/) and [scope](https://pboueke.github.io/QuaterniTS/scope/)
+- [Rules and examples](https://pboueke.github.io/QuaterniTS/rules/) and [scope](https://pboueke.github.io/QuaterniTS/scope/)
 - [Contributing](CONTRIBUTING.md) and [license](LICENSE)
 - Official [basic rules](https://www.quaternity.com/play-quaternity) and [illustrated quick rules](https://play.quaternity.com/static/media/quick_start_rules.ee41e5de.pdf)

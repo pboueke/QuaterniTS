@@ -1767,10 +1767,10 @@ test("the opening-to-terminal administrative match fixture records every action 
       `the fixture must document the action ${label}`,
     );
   }
-  assert.ok(documented.includes("opening-to-terminal administrative match"));
-  assert.ok(documented.includes("not a proof of opening-to-mate"));
+  assert.ok(documented.includes("# Example match"));
+  assert.ok(documented.includes("not an opening-to-mate line"));
   assert.ok(documented.includes("winner: White"));
-  assert.ok(documented.includes("001/D45"));
+  assert.ok(documented.includes("illustrated quick rules"));
 });
 
 test("the opening-to-terminal administrative match ends with an administrative winner and is terminal", () => {

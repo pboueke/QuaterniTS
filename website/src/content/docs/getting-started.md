@@ -4,7 +4,7 @@ description: Install QuaterniTS and make your first move.
 ---
 
 QuaterniTS is a headless rules library: bring your own interface, storage and
-players. It starts from the reviewed 64-piece opening on a 12 × 12 board.
+players. It starts from the 64-piece starting position on a 12 × 12 board.
 
 ## Install
 
@@ -56,6 +56,6 @@ resulting state. Loading one validates and replays the recorded actions.
   snapshots and undo.
 - [Public API](/QuaterniTS/api/) and
   [compatibility guide](/QuaterniTS/reference/compatibility/).
-- [Rules and fixtures](/QuaterniTS/rules/) — the opening position and
+- [Rules and examples](/QuaterniTS/rules/) — the opening position and
   source-linked examples.
 - [Scope](/QuaterniTS/scope/) — supported outcomes and known limitations.

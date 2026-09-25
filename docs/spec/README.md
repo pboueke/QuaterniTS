@@ -9,7 +9,10 @@ examples and evidence.
 - `active/<NNN>-<slug>/spec.md` — the current contract.
 - `active/<NNN>-<slug>/decisions.md` — stable numbered decisions for that spec.
 - `archive/<NNN>-<slug>/` — a spec whose definition of done holds.
-- `active/001-adopt-quaternity/` — QuaterniTS's active rules-library spec.
+- `active/001-adopt-quaternity/` — the bounded, fail-closed library contract;
+  archive only when its unchanged verification and API checks are evidenced.
+- `active/002-checked-non-actor-outcome/` — proposed spec-only follow-up for
+  the still-unknown official outcome; it authorizes no implementation yet.
 
 ## Lifecycle
 

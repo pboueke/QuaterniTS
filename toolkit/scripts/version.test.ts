@@ -13,6 +13,8 @@ import {
   lockfileVersions,
   main,
   packageVersion,
+  readmeBadgeDrift,
+  synchronizeReadmeBadge,
   synchronizeVersions,
   versionDrift,
   type VersionDeps,
@@ -44,6 +46,17 @@ function packageJson(version = "0.1.0"): string {
   )}\n`;
 }
 
+function readme(version = "0.1.0"): string {
+  return [
+    "# QuaterniTS",
+    "",
+    `[![Version: ${version}](https://img.shields.io/static/v1?label=version&message=${encodeURIComponent(version)}&color=blue)](CHANGELOG.md)`,
+    "",
+    "Library overview.",
+    "",
+  ].join("\n");
+}
+
 function lockfile(version = "0.1.0", rootVersion = version): string {
   return `${JSON.stringify(
     {
@@ -69,6 +82,7 @@ interface TempFixtures {
   readonly changelog: string;
   readonly package: string;
   readonly lock: string;
+  readonly readme: string;
 }
 
 function tempFixtures(version = "0.1.0"): TempFixtures {
@@ -78,10 +92,12 @@ function tempFixtures(version = "0.1.0"): TempFixtures {
     changelog: path.join(dir, "CHANGELOG.md"),
     package: path.join(dir, "package.json"),
     lock: path.join(dir, "package-lock.json"),
+    readme: path.join(dir, "README.md"),
   };
   writeFileSync(files.changelog, changelog(version));
   writeFileSync(files.package, packageJson(version));
   writeFileSync(files.lock, lockfile(version));
+  writeFileSync(files.readme, readme(version));
   return files;
 }
 
@@ -93,6 +109,8 @@ function fixtureArgs(files: TempFixtures): string[] {
     files.package,
     "--lock",
     files.lock,
+    "--readme",
+    files.readme,
   ];
 }
 
@@ -130,6 +148,8 @@ const TARGET_ARGS = [
   "package.json",
   "--lock",
   "package-lock.json",
+  "--readme",
+  "README.md",
 ];
 
 test("DEFAULT_TARGETS point at the repository changelog and package metadata", () => {
@@ -137,6 +157,7 @@ test("DEFAULT_TARGETS point at the repository changelog and package metadata", (
     changelog: path.join(REPO_ROOT, "CHANGELOG.md"),
     package: path.join(REPO_ROOT, "package.json"),
     lock: path.join(REPO_ROOT, "package-lock.json"),
+    readme: path.join(REPO_ROOT, "README.md"),
   });
 });
 
@@ -375,6 +396,53 @@ test("lockfileVersions rejects a root package without a version", () => {
   );
 });
 
+test("README badge drift reports missing, stale and malformed versions", () => {
+  assert.deepEqual(readmeBadgeDrift("0.1.0", readme("0.1.0")), []);
+  assert.deepEqual(readmeBadgeDrift("0.2.0", readme("0.1.0")), [
+    { source: "README.md version badge", expected: "0.2.0", actual: "0.1.0" },
+  ]);
+  assert.deepEqual(readmeBadgeDrift("0.1.0", "# QuaterniTS\n\nOverview.\n"), [
+    {
+      source: "README.md version badge",
+      expected: "0.1.0",
+      actual: "(missing)",
+    },
+  ]);
+  assert.deepEqual(
+    readmeBadgeDrift(
+      "0.1.0",
+      readme("0.1.0").replace("message=0.1.0", "message=wrong"),
+    ),
+    [
+      {
+        source: "README.md version badge",
+        expected: "0.1.0",
+        actual: "(malformed)",
+      },
+    ],
+  );
+});
+
+test("README badge sync inserts once and encodes prerelease metadata", () => {
+  const initial = "# QuaterniTS\n\nLibrary overview.\n";
+  const synced = synchronizeReadmeBadge("0.2.0-beta.1+build.5", initial);
+  assert.match(synced, /Version: 0\.2\.0-beta\.1\+build\.5/);
+  assert.match(synced, /message=0\.2\.0-beta\.1%2Bbuild\.5/);
+  assert.equal(synchronizeReadmeBadge("0.2.0-beta.1+build.5", synced), synced);
+  assert.match(synced, /Library overview\./);
+});
+
+test("README badge sync fails before writing when the marker is ambiguous", () => {
+  assert.throws(
+    () => synchronizeReadmeBadge("0.2.0", `${readme()}${readme()}`),
+    /multiple version badges/,
+  );
+  assert.throws(
+    () => synchronizeReadmeBadge("0.2.0", "No project heading\n"),
+    /README.md must start with # QuaterniTS/,
+  );
+});
+
 test("versionDrift returns nothing when every field agrees", () => {
   assert.deepEqual(
     versionDrift("0.1.0", packageJson("0.1.0"), lockfile("0.1.0")),
@@ -471,6 +539,7 @@ test("main passes when every version field agrees with the changelog", () => {
         "CHANGELOG.md": changelog("0.1.0"),
         "package.json": packageJson("0.1.0"),
         "package-lock.json": lockfile("0.1.0"),
+        "README.md": readme("0.1.0"),
       },
       { log: (message: string) => logs.push(message) },
     ),
@@ -478,7 +547,7 @@ test("main passes when every version field agrees with the changelog", () => {
   assert.equal(code, 0);
   assert.match(
     logs.join("\n"),
-    /CHANGELOG\.md 0\.1\.0 matches package\.json and package-lock\.json/,
+    /CHANGELOG\.md 0\.1\.0 matches package\.json, package-lock\.json and README\.md/,
   );
 });
 
@@ -491,6 +560,7 @@ test("main lists every drifting field and fails", () => {
         "CHANGELOG.md": changelog("0.1.0"),
         "package.json": packageJson("0.0.9"),
         "package-lock.json": lockfile("0.0.8", "0.0.7"),
+        "README.md": readme("0.1.0"),
       },
       { error: (message: string) => errors.push(message) },
     ),
@@ -515,6 +585,7 @@ test("main fails closed on an unusable changelog", () => {
         "CHANGELOG.md": "# Changelog\n\nNothing yet.\n",
         "package.json": packageJson("0.1.0"),
         "package-lock.json": lockfile("0.1.0"),
+        "README.md": readme("0.1.0"),
       },
       { error: (message: string) => errors.push(message) },
     ),
@@ -533,13 +604,15 @@ test("main syncs drifting files and reports how many changed", () => {
       "CHANGELOG.md": changelog("0.2.0"),
       "package.json": packageJson("0.1.0"),
       "package-lock.json": lockfile("0.1.0"),
+      "README.md": readme("0.1.0"),
     },
     { log: (message: string) => logs.push(message) },
   );
   const code = main(["--sync", ...TARGET_ARGS], deps);
   assert.equal(code, 0);
-  assert.match(logs.join("\n"), /updated 2 file\(s\) from changelog/);
-  assert.equal(Object.keys(deps.written).length, 2);
+  assert.match(logs.join("\n"), /updated 3 file\(s\) from changelog/);
+  assert.equal(Object.keys(deps.written).length, 3);
+  assert.match(deps.written["README.md"] ?? "", /Version: 0\.2\.0/);
   assert.equal(JSON.parse(deps.written["package.json"] ?? "").version, "0.2.0");
   assert.equal(
     JSON.parse(deps.written["package-lock.json"] ?? "").packages[""].version,
@@ -554,6 +627,7 @@ test("main writes nothing when sync is already clean", () => {
       "CHANGELOG.md": changelog("0.1.0"),
       "package.json": packageJson("0.1.0"),
       "package-lock.json": lockfile("0.1.0"),
+      "README.md": readme("0.1.0"),
     },
     { log: (message: string) => logs.push(message) },
   );
@@ -570,12 +644,29 @@ test("main fails closed when sync input is unusable", () => {
       "CHANGELOG.md": changelog("0.2.0"),
       "package.json": "{",
       "package-lock.json": lockfile("0.1.0"),
+      "README.md": readme("0.1.0"),
     },
     { error: (message: string) => errors.push(message) },
   );
   const code = main(["--sync", ...TARGET_ARGS], deps);
   assert.equal(code, 1);
   assert.match(errors.join("\n"), /FAILED — package\.json is not valid JSON/);
+  assert.deepEqual(deps.written, {});
+});
+
+test("main validates README badge before writing any version field", () => {
+  const errors: string[] = [];
+  const deps = makeDeps(
+    {
+      "CHANGELOG.md": changelog("0.2.0"),
+      "package.json": packageJson("0.1.0"),
+      "package-lock.json": lockfile("0.1.0"),
+      "README.md": `${readme()}${readme()}`,
+    },
+    { error: (message: string) => errors.push(message) },
+  );
+  assert.equal(main(["--sync", ...TARGET_ARGS], deps), 1);
+  assert.match(errors.join("\n"), /README.md has multiple version badges/);
   assert.deepEqual(deps.written, {});
 });
 
@@ -623,7 +714,10 @@ test("the CLI passes against the repository's own changelog and metadata", () =>
     encoding: "utf8",
   });
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /matches package\.json and package-lock\.json/);
+  assert.match(
+    result.stdout,
+    /matches package\.json, package-lock\.json and README\.md/,
+  );
 });
 
 test("the CLI exits nonzero on drift in temp fixtures without writing", () => {
@@ -667,6 +761,8 @@ test("the CLI syncs temp fixtures, preserves flags and is idempotent", () => {
 
     const packageText = readFileSync(files.package, "utf8");
     const lockText = readFileSync(files.lock, "utf8");
+    const readmeText = readFileSync(files.readme, "utf8");
+    assert.match(readmeText, /Version: 0\.2\.0/);
     const second = spawnSync(
       process.execPath,
       [SCRIPT, "--sync", ...fixtureArgs(files)],
@@ -676,6 +772,7 @@ test("the CLI syncs temp fixtures, preserves flags and is idempotent", () => {
     assert.match(second.stdout, /already matches 0\.2\.0/);
     assert.equal(readFileSync(files.package, "utf8"), packageText);
     assert.equal(readFileSync(files.lock, "utf8"), lockText);
+    assert.equal(readFileSync(files.readme, "utf8"), readmeText);
   } finally {
     rmSync(files.dir, { recursive: true, force: true });
   }

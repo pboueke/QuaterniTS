@@ -1,6 +1,6 @@
 ---
 title: Notation & scope
-description: Unofficial, MIT-licensed, deliberately partial — what QuaterniTS claims and what it refuses to claim.
+description: The bounded, fail-closed rules contract and its known limitations.
 ---
 
 ## Unofficial and unaffiliated
@@ -16,26 +16,33 @@ text, trademarks, artwork or other assets. QuaterniTS is developed free of
 charge with no monetization; that is a project intention, not a license
 condition, and it limits no one's MIT rights.
 
-## Honest limits
+## Bounded rules contract
 
-1. **Not a complete engine.** Only the outcomes the rules authorize are
-   reported: a lone active controller wins, and a two-active-controller
-   stalemate or a unanimously accepted draw offer is a draw. Everything else
-   stays `in-progress` instead of adjudicating a mate that no action produced.
-2. **One provisional rule edge is open.** A checked controller that has
-   **internal defensive moves but no safe publicly committable move** has no
-   official outcome. Only that edge fails closed with
-   `UnresolvedAdjudicationError`, while ordinary checkmate (a checked controller
-   with no internal defenses) still applies. See
-   [multiplayer adjudication](/QuaterniTS/reference/rules/multiplayer-adjudication/).
-   `UnresolvedAdjudicationError` is a **software error, never a game outcome**:
-   no mate, pass, draw, elimination or award is decided for it.
-3. **No notation compatibility.** Long coordinates in, typed event records out;
-   there is **no** FEN, PGN or SAN support in any form, and no chess.js API
-   parity. See the
-   [compatibility matrix](/QuaterniTS/reference/compatibility/).
-4. **No board renderer.** The library is headless and ships no UI, server,
-   clock, opponent or AI.
+QuaterniTS is a **bounded, fail-closed rules library**, not a complete game
+engine. It generates committable moves and applies supported outcomes; it does
+not guess an outcome when the official rules leave one unknown. A lone active
+controller wins, and a two-active-controller stalemate or unanimously accepted
+draw offer is a draw. Other positions remain `in-progress` unless a supported
+action produces an outcome.
 
-The official game rule for the open edge stays `[open]`; no complete game-rule
-or complete-engine coverage is claimed.
+A checked controller can have **internal defensive moves but no safe publicly
+committable move** after mate and army-transfer effects are considered. The
+[constructed coordinate witness](/QuaterniTS/reference/rules/d38-coordinate-search/)
+shows why this is not ordinary checkmate: its only apparent defence exposes
+its own king after another king is removed. The library rejects that unresolved
+commit atomically with `UnresolvedAdjudicationError`; it can also raise the
+same error when such a state is encountered on turn. Neither case is a game
+result. Ordinary checkmate, where there is no internal defence, still applies.
+The official outcome for the unresolved position remains **unknown**: no mate,
+pass, draw, elimination or award is inferred. Until an authoritative ruling establishes an outcome, this fail-closed
+contract remains in place; publishing the package does not make the library
+a complete game engine.
+
+## Other limits
+
+- **No notation compatibility.** Long coordinates in, typed event records out;
+  there is **no** FEN, PGN or SAN support in any form, and no chess.js API
+  parity. See the
+  [compatibility matrix](/QuaterniTS/reference/compatibility/).
+- **No board renderer.** The library is headless and ships no UI, server,
+  clock, opponent or AI.

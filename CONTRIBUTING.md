@@ -39,9 +39,10 @@ implementing an ambiguous rule:
 
 1. Cite an **official source** — the official basic rules or the official
    illustrated quick rules (the patent is supporting evidence only).
-2. Add an **additive** numbered decision to
-   [`decisions.md`](docs/spec/active/001-adopt-quaternity/decisions.md)
-   (`001/D<n>`; never renumber or recycle an existing ID).
+2. Add an **additive** numbered decision to the relevant approved spec under
+   [`docs/spec/`](docs/spec) (never renumber or recycle an existing ID). The
+   proposed official-outcome follow-up, spec 002, is not implementation
+   authorization.
 3. Add a source-linked expected-outcome **fixture** under
    [`docs/`](docs).
 4. Write a **failing test first**, then the smallest change that makes it pass
@@ -72,6 +73,50 @@ and verifies every page, link, asset and canonical-source marker; it is part of
 <https://pboueke.github.io/QuaterniTS/>. Enable **GitHub Actions** under
 **Settings → Pages → Build and deployment → Source** to deploy this site.
 
+## npmjs.org release handoff (owner)
+
+`quaternits` is an **unscoped npmjs.org package**, not a GitHub Packages npm
+package. The manifest pins the intended registry and repository; its
+`"private": true` flag remains the accidental-publish safeguard until a
+separately reviewed owner release change. Do not publish from an agent session.
+
+1. Choose the release version in `CHANGELOG.md`. With the opt-in hooks
+   installed (`make install-hooks`), stage the changelog and attempt the
+   commit: pre-commit derives the `package.json` and `package-lock.json`
+   versions and the static README badge from its top version heading. If it
+   changes any generated file, the hook **stops without staging**. Inspect
+   the changes, stage `README.md`, `package.json` and `package-lock.json`
+   yourself, then retry. The hook refuses unstaged changelog or generated-file
+   edits before syncing. Without the hook, run `make version-sync` manually,
+   inspect and stage the same files; `make version-check` and `make verify`
+   never rewrite them. Review and commit the release patch, including an
+   intentional change to the private flag and its manifest-policy test. Keep
+   the built package's bounded
+   [scope](https://pboueke.github.io/QuaterniTS/scope/) visible; publishing
+   is not a complete-game-rules claim.
+2. On that exact release commit, require a passing local `make verify` and a
+   successful **fresh-checkout** CI `make verify` result. Confirm the tag you
+   create names the same version and commit. Inspect `npm pack --dry-run` from
+   the pinned toolkit and the built-package consumer result before any publish.
+3. The **first version** cannot use npm staged publishing: the package must
+   already exist. The owner authenticates with npmjs.org and 2FA, then makes
+   the deliberate first publish to `https://registry.npmjs.org/` from the
+   reviewed artifact. Record the published version and check installation in a
+   disposable consumer. No agent commits, tags, pushes or publishes.
+4. For subsequent versions, configure an npmjs.org **stage-only trusted
+   publisher** for a protected GitHub Actions workflow. Permit `id-token: write`
+   only in its publish job; use no long-lived npm publish token. First validate
+   OIDC inside the pinned Podman toolkit (the npm guide has no container recipe).
+   Only then let CI stage a verified artifact for owner inspection and 2FA
+   approval. If OIDC cannot be validated inside the toolkit, seek explicit
+   approval for a release-only runner exception rather than bypassing the
+   project toolchain policy.
+
+See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)
+and [staged publishing](https://docs.npmjs.com/staged-publishing/). GitHub
+Packages requires a **different scoped package name** and registry setup;
+it cannot serve the documented `npm install quaternits` identity.
+
 ## Pull requests
 
 - Keep changes small, focused and consistent with existing patterns.
@@ -88,7 +133,7 @@ and verifies every page, link, asset and canonical-source marker; it is part of
 
 ## Where things live
 
-- [`README.md`](README.md) — the project overview and honest limits.
+- [`README.md`](README.md) — the project overview and package quick start.
 - [`docs/usage.md`](docs/usage.md) and
   [`docs/compatibility.md`](docs/compatibility.md) — public-API examples and the
   compatibility matrix.

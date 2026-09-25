@@ -1,17 +1,10 @@
-# Pawn move vectors (Phase 2 expected-outcome table)
+# Pawn movement and promotion
 
-Status: **APPROVED BY OWNER-DELEGATED ASSISTANT POLICY** (spec 001/D28, refined by
-001/D29). This is a source-linked expected-outcome table for pawn movement (spec 001/D11
-/ the rules-policy TDD gate). The approval is delegated and read-only — it is
-**not** an owner-personal review; see §8 for the provenance record. It contains
-no engine code and no tests.
-
-It records, for each pawn orientation, exact `from`/`to` legal and illegal cases
-on minimal custom setups. Every claim is tagged `[official]` (stated or pictured
-by the official sources below) or `[inference]` (a direct reading that the
-official material does not spell out case by case). Task-supplied coordinates
-that conflict with the official sources are flagged as premise errors rather than
-marked reviewed.
+The tables give legal and illegal moves for ordinary and advanced central pawns
+in each army, using minimal custom positions. `[official]` identifies an
+outcome shown or stated by the official sources below; `[inference]` identifies
+a documented library interpretation where those sources do not spell out every
+orientation. The official tutorial determines pawn direction.
 
 ## Sources
 
@@ -26,13 +19,13 @@ marked reviewed.
 | Official tutorial, quick start chapter 10 | <https://play.quaternity.com/how-to-play/quick-start/chapter10>           | Commitment to the moved rank/file                        |
 | Official tutorial, quick start chapter 11 | <https://play.quaternity.com/how-to-play/quick-start/chapter11>           | Main-diagonal capture keeps the choice open              |
 | Official tutorial, quick start chapter 12 | <https://play.quaternity.com/how-to-play/quick-start/chapter12>           | Promotion on the furthest rank/file, same move, same sq. |
-| Opening position fixture                  | `docs/fixtures/opening-position.md`                                       | Reviewed opening squares and army corners                |
+| Opening position fixture                  | `docs/fixtures/opening-position.md`                                       | The 64 starting squares and army corners                 |
 
 The tutorial is a public single-page app. Its per-chapter rule-illustration data
 (the selected pawn, the `arrowDirection` move arrows and the `xMark` attack
 squares) was read as the chapter's pictured content — the same tutorial-data
-method used for the reviewed opening fixture (spec 001/D24). No vendor engine or
-move-generation code was read or copied.
+method used to check the [starting position](../fixtures/opening-position.md).
+No vendor engine or move-generation code was copied.
 
 Official rule text quoted verbatim:
 
@@ -112,7 +105,7 @@ A pawn captures on the **two diagonals forward of its movement axis**, one squar
 each. `[official]` text (chapter 7) plus the chapter-7 pictures; the "two
 diagonals" reading is `[inference]` for the diagonal that chapter 7 does not
 picture (each chapter-7 example places only one enemy on a diagonal). This
-reading is adopted as policy by spec 001/D28 (§8).
+both diagonals are supported by this library (§8).
 
 Baseline setup: §2, plus an enemy piece ("target") on each named capture square.
 Capture squares are empty in the base case; `×` marks a capture.
@@ -188,8 +181,7 @@ board). White plays `d4×e5`, capturing the knight toward the center. The pawn
 become committed. It now stands on `e5` with the three attack squares `d6`, `f6`,
 `f4` (chapter 9 / chapter 11 step 2). By contrast, capturing a side square
 (`d4×c5` or `d4×e3`) is `[inference]` to commit the pawn to a persistent
-**direction** relative to its **current** square (spec 001/D28, refined by 001/D29 — see
-§8): `d4×c5` commits **up** from `c5`, so the pawn then moves `c5–c6` and
+**direction** relative to its **current** square (§8): `d4×c5` commits **up** from `c5`, so the pawn then moves `c5–c6` and
 captures `b6`/`d6`; `d4×e3` commits **right** from `e3`, so it then moves
 `e3–f3` and captures `f4`/`f2`. The pawn does not stay on the original
 file/rank: old-line continuations are illegal (after `d4×c5`, `c5–d5`, `c5–b5`,
@@ -225,7 +217,7 @@ square that points back toward its own corner (`d4×c3`, `e5×d4`).
 An advanced pawn promotes on the edge of its committed direction: a pawn
 committed up (e.g. `d4–d5…d11–d12`) promotes on the far rank (d12); a pawn
 committed right (`d4–e4…k4–l4`) promotes on the far file (l4); after a side
-capture the direction is preserved relative to the new square (§5, spec 001/D29), so
+capture the direction is preserved relative to the new square (§5), so
 `d4×c5` then up `c5–c6…c12` promotes on rank 12 and `d4×e3` then right
 `e3–f3…l3` promotes on file l. `[inference]` for the advanced-pawn paths; the
 ordinary case is `[official]`.
@@ -235,8 +227,8 @@ ordinary case is `[official]`.
 — the quiet `d11–d12` or a capture such as `d11×e12` — attacks along rank 12 and
 therefore gives **check to both Red `a12` and Black `l12`**. The promotion rule
 itself is `[official]` and mandatory; only the check/mate consequences are
-adjudication questions that remain 001/D27-blocked. The fixture below therefore uses
-a custom baseline so that the promotion is the only thing under test.
+separate adjudication questions. The example below uses a custom baseline so
+that promotion is the only thing under test.
 
 **Capture-to-promotion.** `[official]` chapter 12 (same move, same square) with
 the §3 capture rule. Custom minimal setup, distinct from the §7 default corners:
@@ -277,31 +269,14 @@ edge square. Promotion only happens on a square the pawn can actually reach.
 
 All squares named are on the 12×12 board (`a–l` × `1–12`).
 
-## 8. Status, provenance, and resolutions
+## 8. Library interpretations
 
-Status: **APPROVED BY OWNER-DELEGATED ASSISTANT POLICY** (spec 001/D28, refined by
-001/D29). This is a delegated, read-only approval and is **not** an owner-personal
-review.
+The official sources show the one-square forward move, captures, central-pawn
+commitment and promotion. The following details apply consistently across all
+four rotated armies; where a source does not picture every case, they are
+labelled `[inference]` rather than presented as a quotation.
 
-The delegated review used the source-linked expected-outcome table below,
-official tutorial chapters 5–12 and the illustrated quick-rules PDF. The first
-independent review found no blocking issue after corrections in §2, §4 and §6;
-a follow-up caught the side-capture wording and promotion-baseline errors,
-corrected in `001/D29` and §6. See `001/D28` for the adopted pawn policy.
-
-`[official]` (stated or pictured by the sources above): the eight forward
-directions (§1); the one-square forward move and its perpendicularity (§2); the
-diagonal-capture rule and the chapter-7 examples (§3); the advanced pawns'
-rank-or-file first move and commitment (§4); the three-square advanced attack set
-and the non-committing main-diagonal capture (§5); promotion rules and the
-chapter-12 example (§6).
-
-`[inference]` (direct reading not pictured case by case, now adopted by the
-delegated policy 001/D28, refined by 001/D29): the second forward diagonal in every §3
-row; the Red/Black/Green advanced attack sets in §5; which direction a
-side-capture commits (§5); advanced-pawn promotion paths (§6).
-
-### Resolved pawn policies (spec 001/D28, owner-delegated assistant policy)
+### Captures, commitment and promotion
 
 1. **Ordinary pawns capture on both forward diagonals.** Chapter 7 states the
    generic rule ("located diagonally in the direction of movement") and its
@@ -310,7 +285,7 @@ side-capture commits (§5); advanced-pawn promotion paths (§6).
    `j6×k7`); no example places enemies on both, but none excludes the second
    diagonal either. Both diagonals are therefore legal captures (§3).
 2. **A side capture commits the pawn to a persistent direction relative to its
-   current square** (spec 001/D28, refined by 001/D29). For an uncommitted advanced
+   current square**. For an uncommitted advanced
    pawn, a capture whose displacement fits exactly one forward direction commits
    it to that direction, applied from the square it now occupies — **not** to
    the original file/rank: White `d4×c5` (left+up) commits **up** from `c5`
@@ -335,43 +310,9 @@ side-capture commits (§5); advanced-pawn promotion paths (§6).
    reaches the far edge (White rank 12); chapter 12 makes promotion mandatory on
    reaching that rank/file, regardless of commitment.
 
-### Conflict check against official text
-
-None of the six policies contradicts the quoted official text: chapter 7's
-diagonal wording is generic (supports both diagonals); chapter 10 speaks of the
-direction a pawn is moved and chapter 11 only carves out the toward-center
-capture, so committing on a side capture is a reading, not a contradiction;
-chapter 12 requires promotion whenever the furthest rank/file is reached and does
-not restrict it to committed pawns. The side-capture direction choice (item 2)
-and the second diagonal (item 1) remain `[inference]` readings, tagged as such.
-
-### Resolved premise and flagged task errors
-
-1. **Premise grounding is resolved by the official tutorial — see §9.** The
-   orientation used here is the official tutorial's (chapters 5–6), which the
-   repository treats as authority (spec 001/D9). The official tutorial therefore
-   **resolves** the premise; the task-supplied coordinates are recorded as
-   **errors in the task premise**, flagged and unused, and are **not** an
-   unresolved policy blocker.
-
-## 9. Premise discrepancy (resolved by the official tutorial; task coordinates flagged as errors)
-
-The task's orientation grounding was stated as "White rank c5->d5 & file
-e3->e4; Red rank c8->d8 & file e10->e9; Black rank j8->i8 & file h10->h9; Green
-rank j5->i5 & file h3->h4". **Every one of those eight moves is the transpose of
-what the official tutorial shows**, so the task premise is in error. The official
-tutorial chapters 5–6 (see Sources) unambiguously picture White `c5→c6` (up) and
-`e3→f3` (right), with the same swap for Red, Black and Green; the repository
-treats the official rules as authority over a task premise (spec 001/D9), and they
-**resolve** the premise. This is **not** an unresolved policy blocker: the
-orientation and the ordinary-pawn vectors are settled by the official sources.
-
-Consequence: the task's claimed "legal" moves are the wrong-axis moves and are
-**illegal** (they appear in the §2 "Illegal (wrong axis)" column); the task's
-implied perpendicular moves are the legal ones. The task-supplied coordinates are
-recorded here as **errors in the task premise**, flagged and not used anywhere in
-this table.
-
-The §1 orientation table and §2/§3 vectors follow the official tutorial. If the
-task premise is ever reasserted, those tables — not the policy decisions — are the
-thing to reconcile.
+Chapter 7's generic diagonal wording and pictured captures support the two
+forward diagonals; chapter 10 describes direction commitment; chapter 11 keeps
+the choice open after a capture toward the centre; chapter 12 requires promotion
+at the far edge. The side-capture commitment and symmetry-derived cases remain
+labelled `[inference]`. The §1 orientation table and §2–§3 move examples follow
+the tutorial's pictured directions, not ordinary two-player chess vectors.

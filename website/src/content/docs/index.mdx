@@ -36,8 +36,8 @@ trademarks, artwork or other assets.
     href="/QuaterniTS/api/"
   />
   <LinkCard
-    title="Rules & fixtures"
-    description="The reviewed opening position and the source-linked expected-outcome tables."
+    title="Rules & examples"
+    description="The illustrated starting position and coordinate examples."
     href="/QuaterniTS/rules/"
   />
   <LinkCard
@@ -58,9 +58,9 @@ for applications **and** for the education and research of the game's rules.
 <Card>
   <ul>
     <li>
-      <strong>Not a complete engine.</strong> Only the outcomes the rules
-      authorize are reported, and one provisional rule edge fails closed. Read
-      the <a href="/QuaterniTS/scope/">honest limits</a> before relying on it.
+      <strong>Bounded rules, not a complete engine.</strong> Supported outcomes
+      are reported; an unresolved rule edge fails closed rather than inventing a
+      result. Read the <a href="/QuaterniTS/scope/">supported scope</a>.
     </li>
     <li>
       <strong>No notation compatibility.</strong> Long coordinates in, typed
@@ -73,13 +73,11 @@ for applications **and** for the education and research of the game's rules.
   </ul>
 </Card>
 
-## Honest limits
+## An explicit rule boundary
 
-- **Not a complete engine.** A lone active controller wins, and a
-  two-active-controller stalemate or an accepted draw offer is a draw;
-  everything else stays `in-progress` instead of adjudicating a mate that no
-  action produced.
-- **One provisional rule edge is open.** A checked controller with internal
-  defensive moves but no safe publicly committable move has no official outcome;
-  only that edge fails closed with `UnresolvedAdjudicationError`. See
-  [honest limits](/QuaterniTS/scope/).
+When a checked controller has an apparent defence but no safe move after a
+mate and army-transfer cascade, the library rejects the unresolved action with
+`UnresolvedAdjudicationError` **without changing the game**. This software error
+is not a mate, pass or draw. The official outcome remains unknown; the
+[supported scope](/QuaterniTS/scope/) explains the bounded contract and links
+to a concrete position.

@@ -18,7 +18,7 @@ a JSON Schema for its snapshots. The examples below use ESM.
 ```ts
 import { Quaternity } from "quaternits";
 
-// The default position is the reviewed 64-piece opening; White is on turn.
+// The default position is the 64-piece starting board; White is on turn.
 const game = new Quaternity();
 console.log("turn:", game.turn(), "pieces:", game.position().board.size);
 
@@ -78,7 +78,7 @@ A freeze never changes a square: frozen kings stay on the board and are still
 checkmateable by a later action. Once the game is over, board and administrative
 actions are rejected, while `undo()` and `reset()` still work.
 
-The repository also ships one executed full match from the reviewed opening
+The repository also ships an example match from the starting position
 position, [`fixtures/opening-to-terminal-administrative-match.md`](fixtures/opening-to-terminal-administrative-match.md),
 which plays one real committed move per army and then ends through these three
 freezes. It is plainly an **opening-to-terminal administrative match**: the

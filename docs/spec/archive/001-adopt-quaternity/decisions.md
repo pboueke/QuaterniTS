@@ -172,3 +172,34 @@ decision as `001/D<n>`; add future decisions without renumbering existing IDs.
   `quaternits-*`; remove the former local image and cache after the replacement toolkit
   passes verification. This decision supersedes the provisional release clauses in
   `001/D7` and `001/D13`, and the old toolkit-handle clause in `001/D42`.
+
+## Bounded delivery and follow-up
+
+- **001/D46** — The owner approves completing spec 001 as a **bounded, fail-closed
+  rules-library contract**, rather than treating the unknown official outcome as
+  solved. This narrows `001/D3`'s complete-engine delivery ambition and supersedes
+  `001/D41`/`001/D44` only insofar as they withheld *closure of this bounded spec*;
+  their safety guard, error-only tests, and ban on a complete game-rule/engine claim
+  remain in force. The constructed P → Q witness in
+  `docs/rules/d38-coordinate-search.md` §2 and Fixture 4d in
+  `docs/rules/multiplayer-adjudication.md` §4 remain the expected outcomes: an
+  unresolved action raises `UnresolvedAdjudicationError` atomically, **never** mate,
+  pass, draw, elimination or award. The official rule is still `[open]`, and the
+  library must disclose this limit wherever its scope is described. Transfer the
+  question of the official outcome to the separate, spec-only follow-up
+  `docs/spec/active/002-checked-non-actor-outcome/spec.md`; it authorizes no rule
+  implementation until independently approved. Archive 001 **only after** its
+  bounded API, fixtures, fail-closed behavior, and all unchanged local/fresh-CI,
+  consumer, browser and schema gates have verifiable evidence. Repository or npm
+  publication is a separate owner decision; neither implies complete rules.
+
+- **001/D47** — The top version heading in `CHANGELOG.md` remains the sole
+  authored package version. The opt-in pre-commit hook synchronizes the root
+  `package.json`, both root `package-lock.json` version fields and a static
+  `README.md` version badge before running fast quality gates. It refuses mixed
+  staged/unstaged changes to those inputs; if synchronization writes anything,
+  it stops rather than staging or committing on the owner's behalf. The owner
+  inspects and stages the generated changes, then retries. `make version-sync`
+  remains available explicitly; `make version-check` and `make verify` are
+  read-only and fail on drift. This refines `001/D7` and `001/D19` without
+  changing the release safeguard in `001/D43`.

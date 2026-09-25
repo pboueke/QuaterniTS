@@ -16,6 +16,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -28,6 +29,7 @@ import {
   REPO_ROOT,
   SITE,
   STATIC_ROUTES,
+  assertPublicReference,
   astroEntry,
   buildPages,
   collectFiles,
@@ -173,6 +175,42 @@ test("readCanonicalSources reads every canonical document in a stable order", ()
     assert.ok(
       source.markdown.startsWith("# "),
       `${source.repoPath} must start with a top-level heading`,
+    );
+  }
+});
+
+test("the public site has no internal decision IDs or planning labels", () => {
+  for (const source of readCanonicalSources(REPO_ROOT)) {
+    assert.doesNotThrow(() =>
+      assertPublicReference(source.markdown, source.repoPath),
+    );
+  }
+  const authored = path.join(REPO_ROOT, "website/src/content/docs");
+  for (const name of readdirSync(authored)) {
+    if (!/\.(md|mdx)$/.test(name)) {
+      continue;
+    }
+    const sourcePath = `website/src/content/docs/${name}`;
+    assert.doesNotThrow(() =>
+      assertPublicReference(
+        readFileSync(path.join(authored, name), "utf8"),
+        sourcePath,
+      ),
+    );
+  }
+});
+
+test("public reference rendering rejects internal planning text", () => {
+  for (const text of [
+    "Phase 2",
+    "spec 001/D28",
+    "independently reviewed",
+    "OWNER-DELEGATED ASSISTANT POLICY",
+  ]) {
+    assert.throws(
+      () =>
+        assertPublicReference(`# Rules\n\n${text}\n`, "docs/rules/example.md"),
+      /internal development reference.*docs\/rules\/example\.md/,
     );
   }
 });

@@ -6,24 +6,24 @@ description: The Quaternity class, typed events, queries and the deliberately un
 The public API is the `Quaternity` class, the `createPosition` validator, the
 `UnresolvedAdjudicationError` software error, `SNAPSHOT_VERSION`, and the types
 their surfaces expose. It is deliberately partial and claims **no complete
-engine** (see [honest limits](/QuaterniTS/scope/)).
+engine** (see [scope](/QuaterniTS/scope/)).
 
-The runnable, verified examples live in the
+Runnable examples live in the
 [usage reference](/QuaterniTS/reference/usage/). The closest chess.js-style call
 for each concept — and every deliberate gap — is in the
 [compatibility matrix](/QuaterniTS/reference/compatibility/).
 
 ## Constructing and inspecting
 
-| Call                        | Returns                           | Notes                                                                                           |
-| --------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `new Quaternity(position?)` | a game                            | Defaults to the reviewed 64-piece opening; a custom `Position` must come from `createPosition`. |
-| `position()`                | read-only `Position`              | A 12 × 12 `Map` from square to piece; an empty square is absent.                                |
-| `turn()`                    | `ArmyColor`                       | The controller whose turn it is.                                                                |
-| `status()`                  | `Record<ArmyColor, PlayerStatus>` | `"active"`, `"frozen"` or `"eliminated"` per army.                                              |
-| `history()`                 | `readonly HistoryEvent[]`         | Typed event records — never SAN strings.                                                        |
-| `outcome()`                 | `GameOutcome`                     | The rules-authorized result, or `in-progress`.                                                  |
-| `pendingDraw()`             | `PendingDraw \| null`             | The offer plus its recorded votes, if any.                                                      |
+| Call                        | Returns                           | Notes                                                                                            |
+| --------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `new Quaternity(position?)` | a game                            | Defaults to the 64-piece starting position; a custom `Position` must come from `createPosition`. |
+| `position()`                | read-only `Position`              | A 12 × 12 `Map` from square to piece; an empty square is absent.                                 |
+| `turn()`                    | `ArmyColor`                       | The controller whose turn it is.                                                                 |
+| `status()`                  | `Record<ArmyColor, PlayerStatus>` | `"active"`, `"frozen"` or `"eliminated"` per army.                                               |
+| `history()`                 | `readonly HistoryEvent[]`         | Typed event records — never SAN strings.                                                         |
+| `outcome()`                 | `GameOutcome`                     | The rules-authorized result, or `in-progress`.                                                   |
+| `pendingDraw()`             | `PendingDraw \| null`             | The offer plus its recorded votes, if any.                                                       |
 
 ## Queries
 

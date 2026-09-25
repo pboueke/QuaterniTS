@@ -50,9 +50,32 @@ interface HookRun {
  * off the PATH entirely. Git runs hooks from the worktree root, so the
  * temporary directory is also the child's working directory.
  */
-function runHook(hook: string, makeExit: number | null): HookRun {
+function runHook(
+  hook: string,
+  makeExit: number | null,
+  options: {
+    sourceDirty?: boolean;
+    generatedDirty?: boolean;
+    syncChanges?: boolean;
+  } = {},
+): HookRun {
   const dir = mkdtempSync(path.join(tmpdir(), "quaternits-hook-"));
   try {
+    const git = path.join(dir, "git");
+    writeFileSync(
+      git,
+      [
+        "#!/bin/sh",
+        'test "$1" = diff && test "$2" = --quiet && test "$3" = -- || exit 2',
+        'if test "$4" = CHANGELOG.md; then',
+        '  test "${HOOK_SOURCE_DIRTY:-0}" = 0',
+        "else",
+        '  test "${HOOK_GENERATED_DIRTY:-0}" = 0 && test ! -e hook-sync-changed',
+        "fi",
+        "",
+      ].join("\n"),
+    );
+    chmodSync(git, 0o755);
     if (makeExit !== null) {
       const make = path.join(dir, "make");
       writeFileSync(
@@ -60,6 +83,7 @@ function runHook(hook: string, makeExit: number | null): HookRun {
         [
           "#!/bin/sh",
           'printf "%s\\n" "$*" >> make-calls',
+          'if test "$1" = version-sync && test "${HOOK_SYNC_CHANGES:-0}" = 1; then : > hook-sync-changed; fi',
           `exit ${String(makeExit)}`,
           "",
         ].join("\n"),
@@ -69,7 +93,12 @@ function runHook(hook: string, makeExit: number | null): HookRun {
     const result = spawnSync(BASH, [path.join(HOOKS_DIR, hook)], {
       encoding: "utf8",
       cwd: dir,
-      env: { PATH: dir },
+      env: {
+        PATH: dir,
+        HOOK_SOURCE_DIRTY: options.sourceDirty ? "1" : "0",
+        HOOK_GENERATED_DIRTY: options.generatedDirty ? "1" : "0",
+        HOOK_SYNC_CHANGES: options.syncChanges ? "1" : "0",
+      },
     });
     const callsFile = path.join(dir, "make-calls");
     const recorded = existsSync(callsFile)
@@ -103,7 +132,28 @@ test("both hooks are syntactically valid bash", () => {
 test("pre-commit runs the preflight and the fast local checks", () => {
   const { status, calls } = runHook("pre-commit", 0);
   assert.equal(status, 0);
-  assert.deepEqual(calls, ["preflight fmt-check lint types version-check"]);
+  assert.deepEqual(calls, [
+    "version-sync",
+    "preflight fmt-check lint types version-check",
+  ]);
+});
+
+test("pre-commit refuses mixed staged and unstaged version input", () => {
+  assert.deepEqual(runHook("pre-commit", 0, { sourceDirty: true }), {
+    status: 1,
+    calls: [],
+  });
+  assert.deepEqual(runHook("pre-commit", 0, { generatedDirty: true }), {
+    status: 1,
+    calls: [],
+  });
+});
+
+test("pre-commit updates but never stages generated version fields", () => {
+  assert.deepEqual(runHook("pre-commit", 0, { syncChanges: true }), {
+    status: 1,
+    calls: ["version-sync"],
+  });
 });
 
 test("pre-push runs the same gate as CI", () => {

@@ -256,12 +256,29 @@ export function rewriteCanonicalLinks(
     .join("\n");
 }
 
+/** Reject internal planning language from pages intended for public readers. */
+export function assertPublicReference(
+  markdown: string,
+  sourcePath: string,
+): void {
+  const internal =
+    /\b(?:spec|phase|owner-delegated|assistant|reviewer|reviewed|approved)\b|001\/D\d+/i.exec(
+      markdown,
+    );
+  if (internal) {
+    throw new Error(
+      `internal development reference "${internal[0]}" in public page ${sourcePath}`,
+    );
+  }
+}
+
 /** Render one generated Starlight page from a canonical document. */
 export function renderGeneratedPage(
   source: CanonicalSource,
   routes: ReadonlyMap<string, string>,
   order: number,
 ): string {
+  assertPublicReference(source.markdown, source.repoPath);
   const title = headingTitle(source.markdown);
   const body = rewriteCanonicalLinks(
     withoutTopHeading(source.markdown),

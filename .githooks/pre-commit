@@ -2,15 +2,32 @@
 #
 # QuaterniTS opt-in pre-commit hook: fast feedback before a commit.
 #
-# Git runs hooks from the worktree root, so the make targets resolve without a
-# `cd`. The hook runs only real targets: the rootless-Podman preflight, then
-# formatting, lint, type and changelog/version checks inside the pinned toolkit
-# image. It never skips or weakens a gate and fails visibly when rootless Podman
-# is unusable.
+# Git runs hooks from the worktree root. Refuse mixed staged/unstaged version
+# input, then sync the package, lockfile and README badge from CHANGELOG.md.
+# If sync writes anything, stop: the owner stages those generated files and
+# retries. The hook never stages files or commits for the owner. A clean retry
+# runs the real formatting, lint, type and version gates in the pinned toolkit.
 #
 # Install explicitly from the repository root (opt-in, host-side, no Podman):
 #   make install-hooks
 # Disable with: git config --local --unset core.hooksPath
 set -euo pipefail
+
+if ! git diff --quiet -- CHANGELOG.md; then
+  printf '%s\n' 'pre-commit: stage CHANGELOG.md before syncing its version.' >&2
+  exit 1
+fi
+if ! git diff --quiet -- README.md package.json package-lock.json; then
+  printf '%s\n' 'pre-commit: stage or discard existing unstaged changes in README.md, package.json and package-lock.json before syncing.' >&2
+  exit 1
+fi
+
+make version-sync
+
+if ! git diff --quiet -- README.md package.json package-lock.json; then
+  printf '%s\n' 'pre-commit: version fields and README badge updated from CHANGELOG.md.' >&2
+  printf '%s\n' 'pre-commit: inspect and stage README.md, package.json and package-lock.json, then retry the commit.' >&2
+  exit 1
+fi
 
 exec make preflight fmt-check lint types version-check

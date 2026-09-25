@@ -1,6 +1,6 @@
 ---
 title: Rules and examples
-description: Official sources, pawn movement, multiplayer outcomes and reviewed positions.
+description: Official sources, pawn movement, multiplayer outcomes and board examples.
 sidebar:
   order: 0
 ---
@@ -22,7 +22,7 @@ supporting background but does not override the illustrated rules.
 - [Unresolved positions](/QuaterniTS/reference/rules/d38-coordinate-search/) —
   a documented edge that fails closed rather than inventing an outcome.
 
-## Reviewed positions
+## Board examples
 
 - [Starting position](/QuaterniTS/reference/fixtures/opening-position/) — the
   64-piece opening and its source comparison.

@@ -29,10 +29,11 @@ clone.
 1. Read the active spec in `docs/spec/active/` and `docs/spec/README.md` first.
 2. Spec-only approval precedes implementation. Do not implement ahead of an
    approved spec.
-3. Resolve each ambiguous rule with an additive entry in spec 001's
-   `decisions.md` (never renumber existing IDs), a source-linked expected-outcome
-   example, and a test written before code (`001/D11`). Never fall back silently
-   to two-player chess conventions.
+3. Resolve each ambiguous rule with an additive decision in the relevant
+   approved spec (never renumber existing IDs), a source-linked expected-outcome
+   example, and a test written before code (`001/D11`). Spec 002 is proposed,
+   not yet implementation authority; its official outcome remains open.
+   Never fall back silently to two-player chess conventions.
 4. Make the smallest correct change that follows existing patterns.
 
 ## Commands

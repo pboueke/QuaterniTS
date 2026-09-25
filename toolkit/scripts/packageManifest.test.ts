@@ -34,6 +34,8 @@ interface Manifest {
   readonly files: readonly string[];
   readonly private: boolean;
   readonly license: string;
+  readonly repository: { readonly type: string; readonly url: string };
+  readonly publishConfig: { readonly registry: string };
   readonly type: string;
   readonly exports: unknown;
   readonly scripts: Readonly<Record<string, string>>;
@@ -116,9 +118,16 @@ test("the export map points at the built ESM and CJS entry points", () => {
   assert.equal(pkg.types, "./dist/esm/index.d.ts");
 });
 
-test("the published tarball is built output plus the snapshot schema, and stays unpublished", () => {
+test("the future npmjs release is pinned to this repository while publication stays disabled", () => {
   assert.deepEqual(pkg.files, ["dist", "schema"]);
   assert.equal(pkg.private, true);
+  assert.deepEqual(pkg.repository, {
+    type: "git",
+    url: "https://github.com/pboueke/QuaterniTS.git",
+  });
+  assert.deepEqual(pkg.publishConfig, {
+    registry: "https://registry.npmjs.org/",
+  });
   assert.equal(pkg.license, "MIT");
   assert.equal(pkg.type, "module");
 });
